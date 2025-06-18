@@ -1,0 +1,182 @@
+local res = vec(480, 360) * 0.5
+local cameraSpeed = 10
+local raycastBlocksDist = 100
+local maxRaysPerPixel = 12
+
+local mod = {}
+local cameraQueue = {}
+local textureId = 0
+
+local faceBlockToTerrainUvMap, faceBlockToUvFuncs, blockPropertiesList = require('blockmap')
+local terrainPng = textures['terrain'] or textures['model.terrain']
+
+local faceToNormal = {
+   up = vec(0, 1, 0),
+   down = vec(0, -1, 0),
+   north = vec(0, 0, -1),
+   south = vec(0, 0, 1),
+   east = vec(1, 0, 0),
+   west = vec(-1, 0, 0),
+}
+
+local faceShading = {
+   up = 1,
+   down = 0.47,
+   north = 0.79,
+   south = 0.79,
+   east = 0.59,
+   west = 0.59,
+}
+
+local facePosToUv = {
+   up = matrices.mat4(vec(1, 0, 0, 0), vec(0, 0, 0, 0), vec(0, 1, 0, 0), vec(0, 0, 0, 0)),
+   down = matrices.mat4(vec(1, 0, 0, 0), vec(0, 0, 0, 0), vec(0, -1, 0, 0), vec(0, 1, 0, 0)),
+   north = matrices.mat4(vec(-1, 0, 0, 0), vec(0, -1, 0, 0), vec(0, 0, 0, 0), vec(1, 1, 0, 0)),
+   south = matrices.mat4(vec(1, 0, 0, 0), vec(0, -1, 0, 0), vec(0, 0, 0, 0), vec(0, 1, 0, 0)),
+   east = matrices.mat4(vec(0, 0, 0, 0), vec(0, -1, 0, 0), vec(-1, 0, 0, 0), vec(1, 1, 0, 0)),
+   west = matrices.mat4(vec(0, 0, 0, 0), vec(0, -1, 0, 0), vec(1, 0, 0, 0), vec(0, 1, 0, 0)),
+}
+
+local skipBlockAabbs = {
+   {vec(-1, -1, -1), vec(2, -0.001, 2)},
+   {vec(-1, 1.001, -1), vec(2, 2, 2)},
+   {vec(-1, -1, -1), vec(2, 2, -0.001)},
+   {vec(-1, -1, 1.001), vec(2, 2, 2)},
+   {vec(1.001, -1, -1), vec(2, 2, 2)},
+   {vec(-1, -1, -1), vec(-0.001, 2, 2)},
+
+}
+
+function events.tick()
+   for i, v in pairs(skipBlockAabbs) do
+      local c = vectors.hsvToRGB((i - 1) / 5, 0.5, 1)
+      for _ = 1, 50 do
+      particles['end_rod']:pos(
+         math.lerp(v[1], v[2], vec(math.random(), math.random(), math.random()))
+      ):gravity(0):lifetime(400):color(c):scale(0.2):spawn()
+      end
+   end
+   local _, hit = raycast:aabb(client.getCameraPos(), client.getCameraPos() + client.getCameraDir() * 100, skipBlockAabbs)
+   particles['end_rod']:pos(hit):gravity(0):lifetime(2):scale(0.5):spawn()
+end
+
+---@param pos Vector3
+---@param dir Vector3
+---@return Vector3
+local function skipBlock(pos, dir)
+   local _, hitpos = raycast:aabb(pos, pos + dir * 2, skipBlockAabbs)
+   return hitpos
+end
+
+local mathFloor = math.floor
+local mathMin = math.min
+local mathMax = math.max
+
+local texture = textures:newTexture('temp', 1, 1)
+local defaultFluidMode = 'ANY'
+
+local previewSprite = models:newPart('', 'HUD'):newSprite('')
+function events.tick()
+   local size = vec(res.x / res.y, 1, 0)
+   size = size * client.getScaledWindowSize().y * 0.4
+   previewSprite:setTexture(texture, 1, 1)
+   previewSprite:setScale(size)
+end
+
+local function raycastPixel(camPos, dir, x, y)
+   local pos = camPos
+   local color = vec(0, 0, 0, 0)
+   local blocksDist = raycastBlocksDist
+   local cullId = pos
+   local fluidMode = defaultFluidMode
+   for _ = 1, maxRaysPerPixel do
+      local block, hitpos, face = raycast:block(pos, pos + dir * blocksDist, "OUTLINE", fluidMode)
+      local blockProperties = blockPropertiesList[block.id]
+      local newCullId = blockProperties.cull or hitpos
+
+      pos = hitpos
+      blocksDist = blocksDist - (hitpos - pos):length()
+
+      local uv = facePosToUv[face]:apply(hitpos % 1)
+      local uvOffset = faceBlockToUvFuncs[face][block.id] and faceBlockToUvFuncs[face][block.id](block) or faceBlockToTerrainUvMap[face][block.id]
+
+      local newColor = terrainPng:getPixel(uvOffset.x + uv.x * 16, uvOffset.y + uv.y * 16)
+      newColor.rgb = newColor.rgb * (world.getLightLevel(hitpos + faceToNormal[face] * 0.01) / 15) * faceShading[face]
+
+      if cullId ~= newCullId and newColor.a ~= 0 then
+         local alpha = color.a + newColor.a * (1 - color.a)
+         color = (
+            (color.rgb * color.a + newColor.rgb * newColor.a * (1 - color.a)) / alpha
+         ):augmented(alpha)
+      end
+      cullId = newCullId
+
+      fluidMode = #block:getFluidTags() >= 1 and 'NONE' or 'ANY'
+
+      if color.a == 1 then
+         break
+      end
+
+      local blockPos = block:getPos()
+      pos = skipBlock(pos - blockPos, dir) + blockPos
+   end
+
+   texture:setPixel(x, y, color)
+end
+
+local function cameraUpdate()
+   if #cameraQueue == 0 then
+      events.WORLD_RENDER:remove(cameraUpdate)
+      return
+   end
+   local camera = cameraQueue[1]
+   local pos = camera.pos
+   local dirMat = camera.dirMat
+   texture = camera.texture
+
+   local maxHeight = res.y - 1
+   local yScale = 2 / -maxHeight
+   defaultFluidMode = #world.getBlockState(pos):getFluidTags() >= 1 and 'NONE' or 'ANY'
+
+   -- print('left', res.x - camera.x)
+   for i = 0, math.min(cameraSpeed, res.x - camera.x) - 1 do
+      local x = camera.x + i
+      local smallx = mathFloor(x * 0.1)
+      -- print(x)
+      local xScaled = (1 - x / (res.x - 1) * 2) * res.x / res.y
+      for y = 0, maxHeight do
+         local smally = mathFloor(y * 0.1)
+         local dir = vec(xScaled, y * yScale + 1, 1):normalize()
+         raycastPixel(pos, dir * dirMat, x, y)
+      end
+   end
+   camera.x = camera.x + cameraSpeed
+
+   texture:update()
+   if camera.x >= res.x then
+      table.remove(cameraQueue, 1)
+      -- print('size', #texture:save() / 1000, 'bytes')
+   end
+end
+
+function mod.takePhoto()
+   local camRot = client.getCameraRot()
+   local texture = textures:newTexture('preview'..textureId, res.x, res.y)
+   textureId = (textureId + 1) % 100
+   local dirMat = matrices.mat3()
+   local fov = math.tan(math.rad(client.getFOV() / 2))
+   dirMat:scale(fov, fov, 1)
+   dirMat:rotate(camRot.x, -camRot.y, 0)
+   if #cameraQueue == 0 then
+      events.WORLD_RENDER:register(cameraUpdate)
+   end
+   table.insert(cameraQueue, {
+      pos = client.getCameraPos(),
+      dirMat = dirMat,
+      x = 0,
+      fov = fov,
+      texture = texture
+   })
+end
+
+return mod
