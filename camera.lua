@@ -38,39 +38,23 @@ local facePosToUv = {
 }
 
 local skipBlockAabbs = {
-   {vec(-1, -1, -1), vec(2, -0.001, 2)},
-   {vec(-1, 1.001, -1), vec(2, 2, 2)},
-   {vec(-1, -1, -1), vec(2, 2, -0.001)},
-   {vec(-1, -1, 1.001), vec(2, 2, 2)},
-   {vec(1.001, -1, -1), vec(2, 2, 2)},
-   {vec(-1, -1, -1), vec(-0.001, 2, 2)},
-
+   {vec(1, -1, -1), vec(2, 2, 2)},
+   {vec(-1, 1, -1), vec(2, 2, 2)},
+   {vec(-1, -1, 1), vec(2, 2, 2)},
+   {vec(-1, -1, -1), vec(0, 2, 2)},
+   {vec(-1, -1, -1), vec(2, 0, 2)},
+   {vec(-1, -1, -1), vec(2, 2, 0)},
 }
-
-function events.tick()
-   for i, v in pairs(skipBlockAabbs) do
-      local c = vectors.hsvToRGB((i - 1) / 5, 0.5, 1)
-      for _ = 1, 50 do
-      particles['end_rod']:pos(
-         math.lerp(v[1], v[2], vec(math.random(), math.random(), math.random()))
-      ):gravity(0):lifetime(400):color(c):scale(0.2):spawn()
-      end
-   end
-   local _, hit = raycast:aabb(client.getCameraPos(), client.getCameraPos() + client.getCameraDir() * 100, skipBlockAabbs)
-   particles['end_rod']:pos(hit):gravity(0):lifetime(2):scale(0.5):spawn()
-end
 
 ---@param pos Vector3
 ---@param dir Vector3
 ---@return Vector3
 local function skipBlock(pos, dir)
-   local _, hitpos = raycast:aabb(pos, pos + dir * 2, skipBlockAabbs)
-   return hitpos
+   local offset = pos % 1
+   local full = pos:floor()
+   local _, hitpos = raycast:aabb(offset, offset + dir * 4, skipBlockAabbs)
+   return (hitpos or offset) + full
 end
-
-local mathFloor = math.floor
-local mathMin = math.min
-local mathMax = math.max
 
 local texture = textures:newTexture('temp', 1, 1)
 local defaultFluidMode = 'ANY'
@@ -94,14 +78,13 @@ local function raycastPixel(camPos, dir, x, y)
       local blockProperties = blockPropertiesList[block.id]
       local newCullId = blockProperties.cull or hitpos
 
-      pos = hitpos
       blocksDist = blocksDist - (hitpos - pos):length()
 
       local uv = facePosToUv[face]:apply(hitpos % 1)
       local uvOffset = faceBlockToUvFuncs[face][block.id] and faceBlockToUvFuncs[face][block.id](block) or faceBlockToTerrainUvMap[face][block.id]
 
       local newColor = terrainPng:getPixel(uvOffset.x + uv.x * 16, uvOffset.y + uv.y * 16)
-      newColor.rgb = newColor.rgb * (world.getLightLevel(hitpos + faceToNormal[face] * 0.01) / 15) * faceShading[face]
+      newColor.rgb = newColor.rgb * (world.getLightLevel(hitpos + faceToNormal[face] * 0.4) / 15) * faceShading[face]
 
       if cullId ~= newCullId and newColor.a ~= 0 then
          local alpha = color.a + newColor.a * (1 - color.a)
@@ -111,14 +94,18 @@ local function raycastPixel(camPos, dir, x, y)
       end
       cullId = newCullId
 
-      fluidMode = #block:getFluidTags() >= 1 and 'NONE' or 'ANY'
-
-      if color.a == 1 then
+      if newColor.a == 1 then
          break
       end
 
-      local blockPos = block:getPos()
-      pos = skipBlock(pos - blockPos, dir) + blockPos
+      local newFluidMode = #block:getFluidTags() >= 1 and 'NONE' or 'ANY'
+
+      pos = hitpos
+      if fluidMode == newFluidMode then
+         pos = skipBlock(pos, dir)
+      else
+         fluidMode = newFluidMode
+      end
    end
 
    texture:setPixel(x, y, color)
@@ -138,16 +125,12 @@ local function cameraUpdate()
    local yScale = 2 / -maxHeight
    defaultFluidMode = #world.getBlockState(pos):getFluidTags() >= 1 and 'NONE' or 'ANY'
 
-   -- print('left', res.x - camera.x)
    for i = 0, math.min(cameraSpeed, res.x - camera.x) - 1 do
       local x = camera.x + i
-      local smallx = mathFloor(x * 0.1)
-      -- print(x)
       local xScaled = (1 - x / (res.x - 1) * 2) * res.x / res.y
       for y = 0, maxHeight do
-         local smally = mathFloor(y * 0.1)
-         local dir = vec(xScaled, y * yScale + 1, 1):normalize()
-         raycastPixel(pos, dir * dirMat, x, y)
+         local dir = (vec(xScaled, y * yScale + 1, 1) * dirMat):normalize()
+         raycastPixel(pos, dir, x, y)
       end
    end
    camera.x = camera.x + cameraSpeed
