@@ -1,6 +1,9 @@
 {
    "name": "nostalgic camera",
+   "color": "#bbff75",
+   "badge_color_donator": "#bbff75",
    "authors": [
-      "AuriaFoxGirl"
+      "AuriaFoxGirl",
+      "assets from old version of minecraft"
    ]
 }
