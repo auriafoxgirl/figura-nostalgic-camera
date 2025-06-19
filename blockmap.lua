@@ -1,5 +1,5 @@
 local terrainAtlas = {
-   air = vec(192, 224),
+   air = vec(184, 214),
    grass_top = vec(0, 0),
    grass_side = vec(48, 0),
    grass_snow_side = vec(64, 64),
@@ -30,6 +30,7 @@ local terrainAtlas = {
    tnt_top = vec(144, 0),
    tnt_down = vec(160, 0),
    glass = vec(16, 48),
+   glass_pane_top = vec(64, 144),
    water = vec(208, 192),
    lava = vec(208, 224),
    obsidian = vec(80, 32),
@@ -72,6 +73,21 @@ local terrainAtlas = {
    light_blue_wool = vec(32, 176),
    magenta_wool = vec(32, 192),
    orange_wool = vec(32, 208),
+   cactus_top = vec(80, 64),
+   cactus_side = vec(96, 64),
+   cactus_down = vec(112, 64),
+   farmland = vec(112, 80),
+   farmland_wet = vec(96, 80),
+   netherrack = vec(112, 96),
+   soul_sand = vec(128, 96),
+   glowstone = vec(144, 96),
+   iron_bars_side = vec(80, 80),
+   iron_bars_top = vec(48, 208),
+   oak_trapdoor = vec(64, 80),
+   stone_bricks = vec(96, 48),
+   mossy_stone_bricks = vec(64, 96),
+   cracked_stone_bricks = vec(80, 96),
+   clay = vec(128, 64),
 }
 
 local uvRotMats = {
@@ -89,6 +105,7 @@ local function randomRotation(block)
 end
 
 local blocks = {
+   ['minecraft:air'] = {all = 'air'},
    ['minecraft:grass_block'] = {
       up = 'grass_top',
       side = function(block)
@@ -162,11 +179,29 @@ local blocks = {
    ['minecraft:light_blue_wool'] = {all = 'light_blue_wool'},
    ['minecraft:magenta_wool'] = {all = 'magenta_wool'},
    ['minecraft:orange_wool'] = {all = 'orange_wool'},
+   ['minecraft:cactus'] = {up = 'cactus_top', side = 'cactus_side', down = 'cactus_down'},
+   ['minecraft:farmland'] = {
+      all = 'dirt',
+      up = function(block)
+         return block.properties.moisture == '7' and terrainAtlas.farmland_wet or terrainAtlas.farmland
+      end
+   },
+   ['minecraft:netherrack'] = {all = 'netherrack'},
+   ['minecraft:soul_sand'] = {all = 'soul_sand'},
+   ['minecraft:glowstone'] = {all = 'glowstone'},
+   ['minecraft:iron_bars'] = {side = 'iron_bars_side', up = 'iron_bars_top', down = 'iron_bars_top'},
+   ['minecraft:glass_pane'] = {side = 'glass', up = 'glass_pane_top', down = 'glass_pane_top'},
+   ['minecraft:oak_trapdoor'] = {all = 'oak_trapdoor'},
+   ['minecraft:stone_bricks'] = {all = 'stone_bricks'},
+   ['minecraft:clay'] = {all = 'clay'},
+   ['minecraft:mossy_stone_bricks'] = {all = 'mossy_stone_bricks'},
+   ['minecraft:cracked_stone_bricks'] = {all = 'cracked_stone_bricks'},
 }
 
 local blockAliasMap = {
+   ['minecraft:grass'] = 'minecraft:short_grass', -- for 1.20.2 and below
    ['minecraft:snow'] = 'minecraft:snow_block',
-
+   ['minecraft:moss_block'] = 'minecraft:lime_wool',
    ['minecraft:andesite'] = 'minecraft:stone',
 
    ['minecraft:wet_sponge'] = 'minecraft:sponge',
@@ -244,7 +279,15 @@ end
 
 for newId, id in pairs(blockAliasMap) do
    local faces = blocks[id]
-   setBlock(faces, id, newId)
+   if faces then
+      setBlock(faces, id, newId)
+   end
+end
+
+-- generate aliases for block models
+local blockModels = require('block_models')
+for newId, id in pairs(blockAliasMap) do
+   blockModels[newId] = blockModels[id]
 end
 
 return finalList, blockFuncs, blockPropertiesFinal

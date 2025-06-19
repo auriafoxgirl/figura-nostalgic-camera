@@ -1,0 +1,107 @@
+local terrainPng = textures['terrain'] or textures['model.terrain']
+---@type {[string]: fun(pos: Vector3, endpos: Vector3): Vector4, Entity.blockSide?}
+local blockModels = {}
+
+local facePosToUv = {
+   up = matrices.mat4(vec(1, 0, 0, 0), vec(0, 0, 0, 0), vec(0, 1, 0, 0), vec(0, 0, 0, 0)),
+   down = matrices.mat4(vec(1, 0, 0, 0), vec(0, 0, 0, 0), vec(0, -1, 0, 0), vec(0, 1, 0, 0)),
+   north = matrices.mat4(vec(-1, 0, 0, 0), vec(0, -1, 0, 0), vec(0, 0, 0, 0), vec(1, 1, 0, 0)),
+   south = matrices.mat4(vec(1, 0, 0, 0), vec(0, -1, 0, 0), vec(0, 0, 0, 0), vec(0, 1, 0, 0)),
+   east = matrices.mat4(vec(0, 0, 0, 0), vec(0, -1, 0, 0), vec(-1, 0, 0, 0), vec(1, 1, 0, 0)),
+   west = matrices.mat4(vec(0, 0, 0, 0), vec(0, -1, 0, 0), vec(1, 0, 0, 0), vec(0, 1, 0, 0)),
+}
+
+do
+   local aabbs = {
+      {vec(0.1, 0.25, 0.1), vec(0.9, 0.25, 0.9)},
+      {vec(0, 0, 0), vec(1, 1, 2 / 16)},
+      {vec(0, 0, 0), vec(2 / 16, 1, 1)},
+      {vec(14 / 16, 0, 0), vec(1, 1, 1)},
+      {vec(0, 0, 14 / 16), vec(1, 1, 1)},
+   }
+   local minSize = vec(0.05, -1, 0.05)
+   local maxSize = vec(0.99, 2, 0.99)
+   blockModels["minecraft:cauldron"] = function(pos, endpos)
+      local _, hitpos, side = raycast:aabb(pos, endpos, aabbs)
+      if hitpos then
+         local uv = facePosToUv[side]:apply(hitpos)
+         if side == 'up' then
+            if hitpos.y > 0.5 then
+               return terrainPng:getPixel(160 + uv.x * 16, 128 + uv.y * 16), side
+            else
+               return terrainPng:getPixel(176 + uv.x * 16, 128 + uv.y * 16), side
+            end
+         elseif side == 'down' then
+            return terrainPng:getPixel(176 + uv.x * 16, 128 + uv.y * 16), side
+         else
+            if hitpos > minSize and hitpos < maxSize then
+               side = 'up'
+            end
+            return terrainPng:getPixel(160 + uv.x * 16, 144 + uv.y * 16), side
+         end
+      end
+      return vec(0, 0, 0, 0)
+   end
+end
+
+local makePlantModel
+do
+local plantModelAabbOffset = (2 ^ 0.5 - 1) * 0.5
+local plantModelAabb1 = {
+   {vec(plantModelAabbOffset, 0, 0), vec(1 + plantModelAabbOffset, 1, 0)},
+}
+local plantModelAabb2 = {
+   {vec(0.5 + plantModelAabbOffset, 0, -0.5), vec(0.5 + plantModelAabbOffset, 1, 0.5)},
+}
+local plantModelPosRotMat = matrices.rotation3(0, 45, 0)
+local emptyVec4 = vec(0, 0, 0, 0)
+---@param uvOffset Vector2
+function makePlantModel(uvOffset)
+   local uvOffsetX = uvOffset.x
+   local uvOffsetY = uvOffset.y + 16
+   return function(pos, endpos)
+      pos = pos * plantModelPosRotMat
+      endpos = endpos * plantModelPosRotMat
+      local _, hitpos, side = raycast:aabb(
+         pos,
+         endpos,
+         plantModelAabb1
+      )
+      local color1 = emptyVec4
+      local depth1 = 99
+      if side then
+         depth1 = (pos - hitpos):lengthSquared()
+         local uv = hitpos.xy - vec(plantModelAabbOffset, 0)
+         if side == 'north' then
+            uv.x = 1 - uv.x
+         end
+         -- color1 = vec(uv.x, uv.y, 0, 1)
+         color1 = terrainPng:getPixel(uv.x * 16 + uvOffsetX, uv.y * -16 + uvOffsetY)
+      end
+      _, hitpos, side = raycast:aabb(
+         pos,
+         endpos,
+         plantModelAabb2
+      )
+      local depth2 = 99
+      local color2 = emptyVec4
+      if side then
+         depth2 = (pos - hitpos):lengthSquared()
+         local uv = hitpos.zy + vec(0.5, 0)
+         if side == 'east' then
+            uv.x = 1 - uv.x
+         end
+         -- color2 = vec(uv.x, uv.y, 0.2, 1)
+         color2 = terrainPng:getPixel(uv.x * 16 + uvOffsetX, uv.y * -16 + uvOffsetY)
+      end
+      return depth2 < depth1 and color2.a == 1 and color2 or color1, 'up'
+   end
+end
+end
+
+blockModels['minecraft:dead_bush'] = makePlantModel(vec(112, 48))
+blockModels['minecraft:short_grass'] = makePlantModel(vec(112, 32))
+blockModels['minecraft:fern'] = makePlantModel(vec(128, 48))
+blockModels['minecraft:sugar_cane'] = makePlantModel(vec(144, 64))
+
+return blockModels

@@ -8,6 +8,7 @@ local cameraQueue = {}
 local textureId = 0
 
 local faceBlockToTerrainUvMap, faceBlockToUvFuncs, blockPropertiesList = require('blockmap')
+local blockModels = require('block_models')
 local terrainPng = textures['terrain'] or textures['model.terrain']
 
 local faceToNormal = {
@@ -51,6 +52,9 @@ local skipBlockAabbs = {
 ---@return Vector3
 local function skipBlock(pos, dir)
    local offset = pos % 1
+   if offset.x == 0 then offset.x = 0.0001 end
+   if offset.y == 0 then offset.y = 0.0001 end
+   if offset.z == 0 then offset.z = 0.0001 end
    local full = pos:floor()
    local _, hitpos = raycast:aabb(offset, offset + dir * 4, skipBlockAabbs)
    return (hitpos or offset) + full
@@ -73,26 +77,43 @@ local function raycastPixel(camPos, dir, x, y)
    local blocksDist = raycastBlocksDist
    local cullId = pos
    local fluidMode = defaultFluidMode
+   local oldLight = 1
    for _ = 1, maxRaysPerPixel do
       local block, hitpos, face = raycast:block(pos, pos + dir * blocksDist, "OUTLINE", fluidMode)
       local blockProperties = blockPropertiesList[block.id]
       local newCullId = blockProperties.cull or hitpos
 
-      blocksDist = blocksDist - (hitpos - pos):length()
+      local distTraveled = (hitpos - pos):length()
 
-      local uv = facePosToUv[face]:apply(hitpos % 1).xy
-      local uvOffset = faceBlockToTerrainUvMap[face][block.id]
-      local uvFunc = faceBlockToUvFuncs[face][block.id]
-      if uvFunc then
-         local uvMat
-         uvOffset, uvMat = uvFunc(block)
-         if uvMat then
-            uv = uvMat:apply(uv)
+      blocksDist = blocksDist - distTraveled
+
+      local newColor
+      if blockModels[block.id] then
+         local newFace
+         local p = hitpos - block:getPos()
+         newColor, newFace = blockModels[block.id](p - dir * 4, p + dir * 64)
+         if newFace then
+            face = newFace
          end
+      else
+         local uv = facePosToUv[face]:apply(hitpos % 1).xy
+         local uvOffset = faceBlockToTerrainUvMap[face][block.id]
+         local uvFunc = faceBlockToUvFuncs[face][block.id]
+         if uvFunc then
+            local uvMat
+            uvOffset, uvMat = uvFunc(block)
+            if uvMat then
+               uv = uvMat:apply(uv)
+            end
+         end
+         newColor = terrainPng:getPixel(uvOffset.x + uv.x * 16, uvOffset.y + uv.y * 16)
       end
 
-      local newColor = terrainPng:getPixel(uvOffset.x + uv.x * 16, uvOffset.y + uv.y * 16)
-      newColor.rgb = newColor.rgb * (world.getLightLevel(hitpos + faceToNormal[face] * 0.4) / 15) * faceShading[face]
+      local newLight = (world.getLightLevel(hitpos + faceToNormal[face] * 0.4) / 15)
+      if newLight > 0 or distTraveled > 0.1 then -- bad fix because raycast stupid
+         oldLight = newLight
+      end
+      newColor.rgb = newColor.rgb * oldLight * faceShading[face]
 
       if cullId ~= newCullId and newColor.a ~= 0 then
          local alpha = color.a + newColor.a * (1 - color.a)
@@ -102,7 +123,7 @@ local function raycastPixel(camPos, dir, x, y)
       end
       cullId = newCullId
 
-      if newColor.a == 1 then
+      if newColor.a > 0.95 then
          break
       end
 
