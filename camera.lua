@@ -80,8 +80,16 @@ local function raycastPixel(camPos, dir, x, y)
 
       blocksDist = blocksDist - (hitpos - pos):length()
 
-      local uv = facePosToUv[face]:apply(hitpos % 1)
-      local uvOffset = faceBlockToUvFuncs[face][block.id] and faceBlockToUvFuncs[face][block.id](block) or faceBlockToTerrainUvMap[face][block.id]
+      local uv = facePosToUv[face]:apply(hitpos % 1).xy
+      local uvOffset = faceBlockToTerrainUvMap[face][block.id]
+      local uvFunc = faceBlockToUvFuncs[face][block.id]
+      if uvFunc then
+         local uvMat
+         uvOffset, uvMat = uvFunc(block)
+         if uvMat then
+            uv = uvMat:apply(uv)
+         end
+      end
 
       local newColor = terrainPng:getPixel(uvOffset.x + uv.x * 16, uvOffset.y + uv.y * 16)
       newColor.rgb = newColor.rgb * (world.getLightLevel(hitpos + faceToNormal[face] * 0.4) / 15) * faceShading[face]

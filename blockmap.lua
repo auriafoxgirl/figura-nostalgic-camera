@@ -1,4 +1,5 @@
 local terrainAtlas = {
+   air = vec(192, 224),
    grass_top = vec(0, 0),
    grass_side = vec(48, 0),
    grass_snow_side = vec(64, 64),
@@ -12,7 +13,9 @@ local terrainAtlas = {
    sand = vec(32, 16),
    gravel = vec(48, 16),
    oak_log_side = vec(64, 16),
-   oak_log_top = vec(80, 16),
+   spruce_log_side = vec(64, 112),
+   birch_log_side = vec(80, 112),
+   log_top = vec(80, 16),
    iron_block = vec(96, 16),
    gold_block = vec(112, 16),
    diamond_block = vec(128, 16),
@@ -20,6 +23,8 @@ local terrainAtlas = {
    stone_slab = vec(80, 0),
    stone_slab_top = vec(96, 0),
    oak_leaves = vec(64, 48),
+   spruce_leaves = vec(96, 192),
+   birch_leaves = vec(64, 128),
    bricks = vec(112, 0),
    tnt_side = vec(128, 0),
    tnt_top = vec(144, 0),
@@ -44,7 +49,28 @@ local terrainAtlas = {
    crafting_table_side1 = vec(176, 48),
    crafting_table_side2 = vec(192, 48),
    nether_portal = vec(64, 192),
+   mycelium_top = vec(224, 64),
+   mycelium_side = vec(208, 64),
+   cake_top = vec(144, 112),
+   cake_side = vec(160, 112),
+   cake_side_inside = vec(176, 112),
+   cake_bottom = vec(192, 112),
+   lily_pad = vec(192, 64),
 }
+
+local uvRotMats = {
+   [0] = matrices.mat3(),
+   matrices.translate3(-0.5, -0.5):rotate(0, 0, 90):translate(0.5, 0.5),
+   matrices.translate3(-0.5, -0.5):rotate(0, 0, 180):translate(0.5, 0.5),
+   matrices.translate3(-0.5, -0.5):rotate(0, 0, -90):translate(0.5, 0.5),
+}
+
+local mathFloor = math.floor
+---@param block BlockState
+local function randomRotation(block)
+   local p = block:getPos()
+   return uvRotMats[mathFloor(p.x * 9613.51367 + p.y * 6871.16432 + p.z * 9907.6413) % 4]
+end
 
 local blocks = {
    ['minecraft:grass_block'] = {
@@ -54,6 +80,7 @@ local blocks = {
       end,
       down = 'dirt'
    },
+   ['minecraft:mycelium'] = {up = 'mycelium_top', side = 'mycelium_side', down = 'dirt'},
    ['minecraft:stone'] = {all = 'stone'},
    ['minecraft:dirt'] = {all = 'dirt'},
    ['minecraft:snow_block'] = {all = 'snow'},
@@ -62,13 +89,17 @@ local blocks = {
    ['minecraft:bedrock'] = {all = 'bedrock'},
    ['minecraft:sand'] = {all = 'sand'},
    ['minecraft:gravel'] = {all = 'gravel'},
-   ['minecraft:oak_log'] = {up = 'oak_log_top', side = 'oak_log_side', down = 'oak_log_top'},
+   ['minecraft:oak_log'] = {up = 'log_top', side = 'oak_log_side', down = 'log_top'},
+   ['minecraft:spruce_log'] = {up = 'log_top', side = 'spruce_log_side', down = 'log_top'},
+   ['minecraft:birch_log'] = {up = 'log_top', side = 'birch_log_side', down = 'log_top'},
    ['minecraft:iron_block'] = {all = 'iron_block'},
    ['minecraft:gold_block'] = {all = 'gold_block'},
    ['minecraft:diamond_block'] = {all = 'diamond_block'},
    ['minecraft:lapis_block'] = {all = 'lapis_block'},
    ['minecraft:smooth_stone_slab'] = {up = 'stone_slab_top', down = 'stone_slab_top', side = 'stone_slab'},
    ['minecraft:oak_leaves'] = {all = 'oak_leaves'},
+   ['minecraft:spruce_leaves'] = {all = 'birch_leaves'},
+   ['minecraft:birch_leaves'] = {all = 'spruce_leaves'},
    ['minecraft:bricks'] = {all = 'bricks'},
    ['minecraft:tnt'] = {up = 'tnt_top', side = 'tnt_side', down = 'tnt_down'},
    ['minecraft:glass'] = {all = 'glass'},
@@ -88,6 +119,17 @@ local blocks = {
    ['minecraft:sandstone'] = {side = 'sandstone_side', up = 'sandstone_top', down = 'sandstone_down'},
    ['minecraft:crafting_table'] = {up = 'crafting_table_top', down = 'oak_planks', east = 'crafting_table_side1', south = 'crafting_table_side1', west = 'crafting_table_side2', north = 'crafting_table_side2'},
    ['minecraft:nether_portal'] = {all = 'nether_portal'},
+   ['minecraft:cake'] = {
+      up = 'cake_top',
+      down = 'cake_bottom',
+      side = 'cake_side',
+      west = function(block)
+         return block.properties.bites == '0' and terrainAtlas.cake_side or terrainAtlas.cake_side_inside
+      end
+   },
+   ['minecraft:lily_pad'] = {all = 'air', up = function(block)
+      return terrainAtlas.lily_pad, randomRotation(block)
+   end},
 }
 
 local blockAliasMap = {

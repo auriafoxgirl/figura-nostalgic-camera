@@ -14,3 +14,4 @@ camera.takePhoto()
 --    local time = client.getSystemTime() - t
 --    print(i == 0 and 'empty func' or 'raycast '..i..' blocks', time, 'ms')
 -- end
+--
