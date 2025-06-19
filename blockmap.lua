@@ -56,6 +56,22 @@ local terrainAtlas = {
    cake_side_inside = vec(176, 112),
    cake_bottom = vec(192, 112),
    lily_pad = vec(192, 64),
+   white_wool = vec(0, 64),
+   black_wool = vec(16, 112),
+   red_wool = vec(16, 128),
+   green_wool = vec(16, 144),
+   brown_wool = vec(16, 160),
+   blue_wool = vec(16, 176),
+   purple_wool = vec(16, 192),
+   cyan_wool = vec(16, 208),
+   light_gray_wool = vec(16, 224),
+   gray_wool = vec(32, 112),
+   pink_wool = vec(32, 128),
+   lime_wool = vec(32, 144),
+   yellow_wool = vec(32, 160),
+   light_blue_wool = vec(32, 176),
+   magenta_wool = vec(32, 192),
+   orange_wool = vec(32, 208),
 }
 
 local uvRotMats = {
@@ -130,6 +146,22 @@ local blocks = {
    ['minecraft:lily_pad'] = {all = 'air', up = function(block)
       return terrainAtlas.lily_pad, randomRotation(block)
    end},
+   ['minecraft:white_wool'] = {all = 'white_wool'},
+   ['minecraft:black_wool'] = {all = 'black_wool'},
+   ['minecraft:red_wool'] = {all = 'red_wool'},
+   ['minecraft:green_wool'] = {all = 'green_wool'},
+   ['minecraft:brown_wool'] = {all = 'brown_wool'},
+   ['minecraft:blue_wool'] = {all = 'blue_wool'},
+   ['minecraft:purple_wool'] = {all = 'purple_wool'},
+   ['minecraft:cyan_wool'] = {all = 'cyan_wool'},
+   ['minecraft:light_gray_wool'] = {all = 'light_gray_wool'},
+   ['minecraft:gray_wool'] = {all = 'gray_wool'},
+   ['minecraft:pink_wool'] = {all = 'pink_wool'},
+   ['minecraft:lime_wool'] = {all = 'lime_wool'},
+   ['minecraft:yellow_wool'] = {all = 'yellow_wool'},
+   ['minecraft:light_blue_wool'] = {all = 'light_blue_wool'},
+   ['minecraft:magenta_wool'] = {all = 'magenta_wool'},
+   ['minecraft:orange_wool'] = {all = 'orange_wool'},
 }
 
 local blockAliasMap = {
