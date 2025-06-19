@@ -91,7 +91,7 @@ local function raycastPixel(camPos, dir, x, y)
       if blockModels[block.id] then
          local newFace
          local p = hitpos - block:getPos()
-         newColor, newFace = blockModels[block.id](p - dir * 4, p + dir * 64)
+         newColor, newFace = blockModels[block.id](p - dir * 4, p + dir * 64, block)
          if newFace then
             face = newFace
          end

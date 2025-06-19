@@ -1,5 +1,5 @@
 local terrainPng = textures['terrain'] or textures['model.terrain']
----@type {[string]: fun(pos: Vector3, endpos: Vector3): Vector4, Entity.blockSide?}
+---@type {[string]: fun(pos: Vector3, endpos: Vector3, block: BlockState): Vector4, Entity.blockSide?}
 local blockModels = {}
 
 local facePosToUv = {
@@ -103,5 +103,47 @@ blockModels['minecraft:dead_bush'] = makePlantModel(vec(112, 48))
 blockModels['minecraft:short_grass'] = makePlantModel(vec(112, 32))
 blockModels['minecraft:fern'] = makePlantModel(vec(128, 48))
 blockModels['minecraft:sugar_cane'] = makePlantModel(vec(144, 64))
+blockModels['minecraft:oak_sapling'] = makePlantModel(vec(240, 0))
+blockModels['minecraft:spruce_sapling'] = makePlantModel(vec(240, 48))
+blockModels['minecraft:birch_sapling'] = makePlantModel(vec(240, 64))
+blockModels['minecraft:poppy'] = makePlantModel(vec(192, 0))
+blockModels['minecraft:dandelion'] = makePlantModel(vec(208, 0))
+blockModels['minecraft:cobweb'] = makePlantModel(vec(176, 0))
+blockModels['minecraft:red_mushroom'] = makePlantModel(vec(192, 16))
+blockModels['minecraft:brown_mushroom'] = makePlantModel(vec(208, 16))
+blockModels['minecraft:pumpkin_stem'] = makePlantModel(vec(240, 96))
+blockModels['minecraft:melon_stem'] = makePlantModel(vec(240, 96))
+
+do
+local aabb1 = { {vec(0.5, 0, 0), vec(0.5, 1, 1)} }
+local aabb2 = { {vec(0, 0, 0.5), vec(1, 1, 0.5)} }
+local plantModel = makePlantModel(vec(208, 160))
+blockModels['minecraft:attached_pumpkin_stem'] = function(pos, endPos, block)
+   local color = plantModel(pos, endPos)
+   if color.a > 0.1 then
+      return color, 'up'
+   end
+   local facing = block.properties.facing
+   if facing == 'north' or facing == 'south' then
+      local _, hitpos = raycast:aabb(pos, endPos, aabb1)
+      if hitpos then
+         if facing == 'south' then
+            hitpos.z = 1 - hitpos.z
+         end
+         return terrainPng:getPixel(240 + hitpos.z * 16, 128 - hitpos.y * 16), 'up'
+      end
+   else
+      local _, hitpos = raycast:aabb(pos, endPos, aabb2)
+      if hitpos then
+         if facing == 'east' then
+            hitpos.x = 1 - hitpos.x
+         end
+         return terrainPng:getPixel(240 + hitpos.x * 16, 128 - hitpos.y * 16), 'up'
+      end
+   end
+   return vec(0, 0, 0, 0)
+end
+blockModels['minecraft:attached_melon_stem'] = blockModels['minecraft:attached_pumpkin_stem']
+end
 
 return blockModels
