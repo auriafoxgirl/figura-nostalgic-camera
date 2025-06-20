@@ -98,6 +98,10 @@ local terrainAtlas = {
    furnace_side = vec(208, 32),
    furnace_top = vec(224, 48),
    dispenser_front = vec(224, 32),
+   pumpkin_front = vec(112, 112),
+   pumpkin_side = vec(96, 112),
+   pumpkin_top = vec(96, 96),
+   jack_o_lantern = vec(128, 112),
 }
 
 local uvRotMats = {
@@ -105,6 +109,13 @@ local uvRotMats = {
    matrices.translate3(-0.5, -0.5):rotate(0, 0, 90):translate(0.5, 0.5),
    matrices.translate3(-0.5, -0.5):rotate(0, 0, 180):translate(0.5, 0.5),
    matrices.translate3(-0.5, -0.5):rotate(0, 0, -90):translate(0.5, 0.5),
+}
+
+local faceToN = {
+   north = 0,
+   east = 1,
+   south = 2,
+   west = 3,
 }
 
 local mathFloor = math.floor
@@ -229,6 +240,38 @@ local blocks = {
          end
          return terrainAtlas.furnace_side
       end
+   },
+   ['minecraft:carved_pumpkin'] = {
+      up = 'pumpkin_top',
+      down = function()
+         return terrainAtlas.pumpkin_top, uvRotMats[1]
+      end,
+      side = function(block, face)
+         if block.properties.facing == face then
+            return terrainAtlas.pumpkin_front
+         end
+         return terrainAtlas.pumpkin_side
+      end
+   },
+   ['minecraft:jack_o_lantern'] = {
+      up = 'pumpkin_top',
+      down = function()
+         return terrainAtlas.pumpkin_top, uvRotMats[1]
+      end,
+      side = function(block, face)
+         if block.properties.facing == face then
+            return terrainAtlas.jack_o_lantern
+         end
+         return terrainAtlas.pumpkin_side
+      end
+   },
+   ['minecraft:pumpkin'] = {
+      north = 'pumpkin_front',
+      side = 'pumpkin_side',
+      up = 'pumpkin_top',
+      down = function()
+         return terrainAtlas.pumpkin_top, uvRotMats[1]
+      end,
    }
 }
 
