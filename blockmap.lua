@@ -93,6 +93,11 @@ local terrainAtlas = {
    enchanting_table_down = vec(112, 176),
    note_block = vec(160, 64),
    jukebox = vec(176, 64),
+   furnace_front = vec(192, 32),
+   furnace_front_lit = vec(208, 48),
+   furnace_side = vec(208, 32),
+   furnace_top = vec(224, 48),
+   dispenser_front = vec(224, 32),
 }
 
 local uvRotMats = {
@@ -205,6 +210,26 @@ local blocks = {
    ['minecraft:note_block'] = {all = 'note_block'},
    ['minecraft:jukebox'] = {all = 'note_block', up = 'jukebox'},
    ['minecraft:smooth_stone'] = {all = 'stone_slab_top'}, -- block transmutation bug?
+   ['minecraft:furnace'] = {
+      up = 'furnace_top',
+      down = 'furnace_top',
+      side = function(block, face)
+         if block.properties.facing == face then
+            return block.properties.lit == 'true' and terrainAtlas.furnace_front_lit or terrainAtlas.furnace_front
+         end
+         return terrainAtlas.furnace_side
+      end
+   },
+   ['minecraft:dispenser'] = {
+      up = 'furnace_top',
+      down = 'furnace_top',
+      side = function(block, face)
+         if block.properties.facing == face then
+            return terrainAtlas.dispenser_front
+         end
+         return terrainAtlas.furnace_side
+      end
+   }
 }
 
 local blockAliasMap = {

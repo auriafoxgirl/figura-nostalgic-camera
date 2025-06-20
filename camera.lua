@@ -51,13 +51,8 @@ local skipBlockAabbs = {
 ---@param dir Vector3
 ---@return Vector3
 local function skipBlock(pos, dir)
-   local offset = pos % 1
-   if offset.x == 0 then offset.x = 0.0001 end
-   if offset.y == 0 then offset.y = 0.0001 end
-   if offset.z == 0 then offset.z = 0.0001 end
-   local full = pos:floor()
-   local _, hitpos = raycast:aabb(offset, offset + dir * 4, skipBlockAabbs)
-   return (hitpos or offset) + full
+   local _, hitpos = raycast:aabb(pos, pos + dir * 4, skipBlockAabbs)
+   return hitpos or pos
 end
 
 local texture = textures:newTexture('temp', 1, 1)
@@ -101,7 +96,7 @@ local function raycastPixel(camPos, dir, x, y)
          local uvFunc = faceBlockToUvFuncs[face][block.id]
          if uvFunc then
             local uvMat
-            uvOffset, uvMat = uvFunc(block)
+            uvOffset, uvMat = uvFunc(block, face)
             if uvMat then
                uv = uvMat:apply(uv)
             end
@@ -115,7 +110,9 @@ local function raycastPixel(camPos, dir, x, y)
       end
       newColor.rgb = newColor.rgb * oldLight * faceShading[face]
 
+      local colorApplied = false
       if cullId ~= newCullId and newColor.a ~= 0 then
+         colorApplied = true
          local alpha = color.a + newColor.a * (1 - color.a)
          color = (
             (color.rgb * color.a + newColor.rgb * newColor.a * (1 - color.a)) / alpha
@@ -123,7 +120,7 @@ local function raycastPixel(camPos, dir, x, y)
       end
       cullId = newCullId
 
-      if newColor.a > 0.95 then
+      if (colorApplied and newColor.a > 0.95) or blocksDist < 0.01 then
          break
       end
 
@@ -131,13 +128,20 @@ local function raycastPixel(camPos, dir, x, y)
 
       pos = hitpos
       if fluidMode == newFluidMode then
-         pos = skipBlock(pos, dir)
+         local blockPos = block:getPos()
+         pos = skipBlock(pos - blockPos, dir) + blockPos + dir * 0.05
+         blocksDist = blocksDist - (pos - hitpos):length()
       else
          fluidMode = newFluidMode
       end
    end
-
    texture:setPixel(x, y, color)
+end
+
+function events.tick()
+   local pos = player:getPos():add(0, player:getEyeHeight())
+   local dir = player:getLookDir()
+   raycastPixel(pos, dir, 0, 0)
 end
 
 local function cameraUpdate()
