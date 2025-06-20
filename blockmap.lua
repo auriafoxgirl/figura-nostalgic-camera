@@ -88,6 +88,11 @@ local terrainAtlas = {
    mossy_stone_bricks = vec(64, 96),
    cracked_stone_bricks = vec(80, 96),
    clay = vec(128, 64),
+   enchanting_table_top = vec(96, 160),
+   enchanting_table_side = vec(96, 176),
+   enchanting_table_down = vec(112, 176),
+   note_block = vec(160, 64),
+   jukebox = vec(176, 64),
 }
 
 local uvRotMats = {
@@ -196,6 +201,10 @@ local blocks = {
    ['minecraft:clay'] = {all = 'clay'},
    ['minecraft:mossy_stone_bricks'] = {all = 'mossy_stone_bricks'},
    ['minecraft:cracked_stone_bricks'] = {all = 'cracked_stone_bricks'},
+   ['minecraft:enchanting_table'] = {side = 'enchanting_table_side', up = 'enchanting_table_top', down = 'enchanting_table_down'},
+   ['minecraft:note_block'] = {all = 'note_block'},
+   ['minecraft:jukebox'] = {all = 'note_block', up = 'jukebox'},
+   ['minecraft:smooth_stone'] = {all = 'stone_slab_top'}, -- block transmutation bug?
 }
 
 local blockAliasMap = {

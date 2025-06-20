@@ -1,5 +1,5 @@
 local res = vec(480, 360) * 0.5
-local cameraSpeed = 10
+local cameraSpeed = 5
 local raycastBlocksDist = 100
 local maxRaysPerPixel = 12
 

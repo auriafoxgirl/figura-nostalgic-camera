@@ -146,4 +146,23 @@ end
 blockModels['minecraft:attached_melon_stem'] = blockModels['minecraft:attached_pumpkin_stem']
 end
 
+do
+local aabbs = {
+   {vec(6, 15, 6) / 16, vec(10, 16, 10) / 16},
+   {vec(5, 14, 5) / 16, vec(11, 15, 11) / 16},
+   {vec(4, 13, 4) / 16, vec(12, 14, 12) / 16},
+   {vec(3, 0, 3) / 16, vec(13, 13, 13) / 16},
+   {vec(2, 1, 2) / 16, vec(14, 11, 14) / 16},
+   {vec(1, 3, 1) / 16, vec(15, 8, 15) / 16},
+}
+blockModels['minecraft:dragon_egg'] = function(pos, endPos)
+   local _, hitpos, face = raycast:aabb(pos, endPos, aabbs)
+   if face then
+      local uv = facePosToUv[face]:apply(hitpos)
+      return terrainPng:getPixel(112 + uv.x * 16, 160 + uv.y * 16), face
+   end
+   return vec(0, 0, 0, 0)
+end
+end
+
 return blockModels
