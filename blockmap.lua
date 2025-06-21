@@ -101,7 +101,25 @@ local terrainAtlas = {
    pumpkin_front = vec(112, 112),
    pumpkin_side = vec(96, 112),
    pumpkin_top = vec(96, 96),
-   jack_o_lantern = vec(128, 112),
+   melon_side = vec(128, 128),
+   melon_top = vec(144, 128),
+   vine = vec(240, 128),
+   end_portal_frame_side = vec(240, 144),
+   end_portal_frame_top = vec(224, 144),
+   end_portal_frame_top_eye = vec(224, 160),
+   end_portal_frame_side_eye = vec(240, 176),
+   end_stone = vec(240, 160),
+   end_portal = vec(64, 208),
+   red_mushroom_block = vec(208, 112),
+   brown_mushroom_block = vec(224, 112),
+   mushroom_inside = vec(224, 128),
+   mushroom_stem = vec(208, 128),
+   bed_top1 = vec(96, 128),
+   bed_top2 = vec(112, 128),
+   bed_side1 = vec(96, 144),
+   bed_side2 = vec(112, 144),
+   bed_front1 = vec(80, 144),
+   bed_front2 = vec(128, 144),
 }
 
 local uvRotMats = {
@@ -111,11 +129,13 @@ local uvRotMats = {
    matrices.translate3(-0.5, -0.5):rotate(0, 0, -90):translate(0.5, 0.5),
 }
 
+local flipXMat = matrices.translate3(-0.5, -0.5):scale(-1, 1, 1):translate(0.5, 0.5)
+
 local faceToN = {
    north = 0,
-   east = 1,
+   west = 1,
    south = 2,
-   west = 3,
+   east = 3,
 }
 
 local mathFloor = math.floor
@@ -235,7 +255,8 @@ local blocks = {
       up = 'furnace_top',
       down = 'furnace_top',
       side = function(block, face)
-         if block.properties.facing == face then
+         local blockFace = block.properties.facing
+         if (faceToN[blockFace] and blockFace or 'north') == face then
             return terrainAtlas.dispenser_front
          end
          return terrainAtlas.furnace_side
@@ -272,7 +293,49 @@ local blocks = {
       down = function()
          return terrainAtlas.pumpkin_top, uvRotMats[1]
       end,
-   }
+   },
+   ['minecraft:melon'] = {side = 'melon_side', all = 'melon_top'},
+   ['minecraft:vine'] = {
+      all = 'air',
+      side = function()
+         return terrainAtlas.vine, nil, 'up'
+      end
+   },
+   ['minecraft:end_portal_frame'] = {
+      down = 'end_stone',
+      side = function(block)
+         return block.properties.eye == 'true' and terrainAtlas.end_portal_frame_side_eye or terrainAtlas.end_portal_frame_side
+      end,
+      up = function(block)
+         return block.properties.eye == 'true' and terrainAtlas.end_portal_frame_top_eye or terrainAtlas.end_portal_frame_top,
+            uvRotMats[ faceToN[block.properties.facing] ]
+      end
+   },
+   ['minecraft:end_stone'] = {all = 'end_stone'},
+   ['minecraft:end_portal'] = {all = 'air', up = 'end_portal'},
+   ['minecraft:red_mushroom_block'] = {all = function(block, face)
+      return block.properties[face] == 'true' and terrainAtlas.red_mushroom_block or terrainAtlas.mushroom_inside
+   end},
+   ['minecraft:brown_mushroom_block'] = {all = function(block, face)
+      return block.properties[face] == 'true' and terrainAtlas.brown_mushroom_block or terrainAtlas.mushroom_inside
+   end},
+   ['minecraft:mushroom_stem'] = {all = 'mushroom_inside', side = 'mushroom_stem'},
+   ['minecraft:red_bed'] = {
+      up = function(block)
+         return block.properties.part == 'head' and terrainAtlas.bed_top2 or terrainAtlas.bed_top1,
+            uvRotMats[ (faceToN[block.properties.facing] + 1) % 4 ]
+      end,
+      side = function(block, face)
+         face = (faceToN[face] - faceToN[block.properties.facing]) % 4
+         if block.properties.part == 'head' then
+            return face == 0 and terrainAtlas.bed_front2 or terrainAtlas.bed_side2,
+               face == 1 and flipXMat or nil
+         end
+         return face == 2 and terrainAtlas.bed_front1 or terrainAtlas.bed_side1,
+            face == 1 and flipXMat or nil
+      end,
+      down = 'oak_planks'
+   },
 }
 
 local blockAliasMap = {
