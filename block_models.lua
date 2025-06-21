@@ -11,6 +11,25 @@ local facePosToUv = {
    west = matrices.mat4(vec(0, 0, 0, 0), vec(0, -1, 0, 0), vec(1, 0, 0, 0), vec(0, 1, 0, 0)),
 }
 
+local faceToN = {
+   north = 0,
+   west = 1,
+   south = 2,
+   east = 3,
+}
+
+---@param aabbs {[1]: Vector3, [2]: Vector3}[]
+---@param rot Vector3
+---@return {[1]: Vector3, [2]: Vector3}[]
+local function rotateAabbs(aabbs, rot)
+   local newAabbs = {}
+   local rotMat = matrices.translate4(-0.5, -0.5, -0.5):rotate(rot):translate(0.5, 0.5, 0.5)
+   for i, v in pairs(aabbs) do
+      newAabbs[i] = {rotMat:apply(v[1]), rotMat:apply(v[2])}
+   end
+   return newAabbs
+end
+
 do
    local aabbs = {
       {vec(0.1, 0.25, 0.1), vec(0.9, 0.25, 0.9)},
@@ -163,6 +182,80 @@ blockModels['minecraft:dragon_egg'] = function(pos, endPos)
    end
    return vec(0, 0, 0, 0)
 end
+end
+
+do
+local aabbsSmall = {
+   {vec(1 / 16, 0, 1 / 16), vec(15 / 16, 14 / 16, 15 / 16)},
+   {vec(7 / 16, 7 / 16, 0), vec(9 / 16, 11 / 16, 1 / 16)},
+}
+local aabbsSmallRots = {
+   [0] = aabbsSmall,
+   rotateAabbs(aabbsSmall, vec(0, 90, 0)),
+   rotateAabbs(aabbsSmall, vec(0, 180, 0)),
+   rotateAabbs(aabbsSmall, vec(0, 270, 0)),
+}
+local aabbsBig = {
+   {vec(-7 / 16, 0, 1 / 16), vec(23 / 16, 14 / 16, 15 / 16)},
+   {vec(7 / 16, 7 / 16, 0), vec(9 / 16, 11 / 16, 1 / 16)},
+}
+local aabbsBigRots = {
+   [0] = aabbsBig,
+   rotateAabbs(aabbsBig, vec(0, 90, 0)),
+   rotateAabbs(aabbsBig, vec(0, 180, 0)),
+   rotateAabbs(aabbsBig, vec(0, 270, 0)),
+}
+local bigChestOffsets = {
+   [0] = vec(0.5, 0, 0),
+   vec(0, 0, -0.5),
+   vec(-0.5, 0, 0),
+   vec(0, 0, 0.5),
+}
+
+blockModels['minecraft:chest'] = function(pos, endPos, block)
+   local faceN = faceToN[block.properties.facing]
+   if block.properties.type == 'single' then
+      local _, hitpos, face = raycast:aabb(pos, endPos, aabbsSmallRots[ faceN ])
+      if face then
+         local uv = facePosToUv[face]:apply(hitpos)
+         if face == 'up' or face == 'down' then
+            return terrainPng:getPixel(144 + uv.x * 16, 16 + uv.y * 16), face
+         end
+         faceN = (faceN - faceToN[ face ]) % 4
+         if faceN == 0 then
+            return terrainPng:getPixel(176 + uv.x * 16, 16 + uv.y * 16), face
+         else
+            return terrainPng:getPixel(160 + uv.x * 16, 16 + uv.y * 16), face
+         end
+      end
+      return vec(0, 0, 0, 0)
+   end
+   local posOffset = bigChestOffsets[faceN]
+   if block.properties.type == "left" then
+      posOffset = -posOffset
+   end
+   pos = pos + posOffset
+   endPos = endPos + posOffset
+   local _, hitpos, face = raycast:aabb(pos, endPos, aabbsBigRots[ faceN ])
+   if face then
+      local uv = facePosToUv[face]:apply(hitpos)
+      if face == 'up' or face == 'down' then
+         if faceN == 1 or faceN == 3 then
+            uv.x, uv.y = 1 - uv.y, uv.x
+         end
+         return terrainPng:getPixel(184 + uv.x * 16, 160 + uv.y * 16), face
+      end
+      faceN = (faceN - faceToN[ face ]) % 4
+      if faceN == 0 then
+         return terrainPng:getPixel(152 + uv.x * 16, 32 + uv.y * 16), face
+      elseif faceN == 2 then
+         return terrainPng:getPixel(152 + uv.x * 16, 48 + uv.y * 16), face
+      end
+      return terrainPng:getPixel(160 + uv.x * 16, 16 + uv.y * 16), face
+   end
+   return vec(0, 0, 0, 0)
+end
+
 end
 
 return blockModels
