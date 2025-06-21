@@ -59,6 +59,7 @@ local texture = textures:newTexture('temp', 1, 1)
 local defaultFluidMode = 'ANY'
 
 local previewSprite = models:newPart('', 'HUD'):newSprite('')
+previewSprite:setLight(15, 15)
 function events.tick()
    local size = vec(res.x / res.y, 1, 0)
    size = size * client.getScaledWindowSize().y * 0.4

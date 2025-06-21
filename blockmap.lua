@@ -126,6 +126,12 @@ local terrainAtlas = {
    wooden_door_bottom = vec(16, 96),
    iron_door_top = vec(32, 80),
    iron_door_bottom = vec(32, 96),
+   piston_front = vec(176, 96),
+   piston_front_sticky = vec(160, 96),
+   piston_front_extended = vec(224, 96),
+   piston_back = vec(208, 96),
+   piston_side = vec(192, 96),
+   piston_head = vec(144, 160),
 }
 
 local uvRotMats = {
@@ -149,6 +155,43 @@ local mathFloor = math.floor
 local function randomRotation(block)
    local p = block:getPos()
    return uvRotMats[mathFloor(p.x * 9613.51367 + p.y * 6871.16432 + p.z * 9907.6413) % 4]
+end
+
+---@param block BlockState
+---@param face Entity.blockSide
+---@return number, number
+local function pistonLogic(block, face)
+   local faceN = faceToN[block.properties.facing]
+   if faceN then
+      if not faceToN[face] then
+         if face == 'down' then
+            faceN = 2 - faceN
+         end
+         return 3, (faceN + 3) % 4
+      end
+      faceN = faceN - faceToN[face]
+      faceN = faceN % 4
+      if faceN == 0 then
+         return block.properties.type == 'sticky' and 1 or 2, 0
+      elseif faceN == 2 then
+         return 4, 0
+      end
+      return 3, faceN == 1 and 2 or 0
+   end
+   if block.properties.facing == 'up' then
+      if face == 'up' then
+         return block.properties.type == 'sticky' and 1 or 2, 0
+      elseif face == 'down' then
+         return 4, 0
+      end
+      return 3, 3
+   end
+   if face == 'down' then
+      return block.properties.type == 'sticky' and 1 or 2, 0
+   elseif face == 'up' then
+      return 4, 0
+   end
+   return 3, 1
 end
 
 local blocks = {
@@ -365,7 +408,7 @@ local blocks = {
       return block.properties.half == 'upper' and terrainAtlas.wooden_door_top or terrainAtlas.wooden_door_bottom,
          side and flipXMat or nil
    end},
-['minecraft:iron_door'] = {all = function(block)
+   ['minecraft:iron_door'] = {all = function(block)
       local faceN = faceToN[block.properties.facing] + 2
       if block.properties.open == 'true' then
          faceN = faceN + (block.properties.hinge == 'right' and 1 or -1)
@@ -386,6 +429,50 @@ local blocks = {
       return block.properties.half == 'upper' and terrainAtlas.iron_door_top or terrainAtlas.iron_door_bottom,
          side and flipXMat or nil
    end},
+   ['minecraft:piston_head'] = {
+      all = function(block, face)
+         local tex, rot = pistonLogic(block, face)
+         local mat = uvRotMats[rot]
+         if tex == 1 then
+            return terrainAtlas.piston_front_sticky, mat
+         elseif tex == 2 then
+            return terrainAtlas.piston_front, mat
+         elseif tex == 3 then
+            return terrainAtlas.piston_head, mat
+         end
+         return terrainAtlas.piston_front, mat
+      end
+   },
+   ['minecraft:piston'] = {
+      all = function(block, face)
+         local tex, rot = pistonLogic(block, face)
+         if tex == 3 then
+            rot = (rot + 1) % 4
+         end
+         local mat = uvRotMats[rot]
+         if tex <= 2 then
+            return block.properties.extended and terrainAtlas.piston_front_extended or terrainAtlas.piston_front, mat
+         elseif tex == 3 then
+            return terrainAtlas.piston_side, mat
+         end
+         return terrainAtlas.piston_back, mat
+      end
+   },
+   ['minecraft:sticky_piston'] = {
+      all = function(block, face)
+         local tex, rot = pistonLogic(block, face)
+         if tex == 3 then
+            rot = (rot + 1) % 4
+         end
+         local mat = uvRotMats[rot]
+         if tex <= 2 then
+            return block.properties.extended and terrainAtlas.piston_front_extended or terrainAtlas.piston_front_sticky, mat
+         elseif tex == 3 then
+            return terrainAtlas.piston_side, mat
+         end
+         return terrainAtlas.piston_back, mat
+      end
+   },
 }
 
 local blockAliasMap = {
