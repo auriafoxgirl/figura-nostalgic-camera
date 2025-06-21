@@ -121,6 +121,7 @@ local terrainAtlas = {
    bed_front1 = vec(80, 144),
    bed_front2 = vec(128, 144),
    spawner = vec(16, 64),
+   nether_bricks = vec(0, 224),
 }
 
 local uvRotMats = {
@@ -338,6 +339,7 @@ local blocks = {
       down = 'oak_planks'
    },
    ['minecraft:spawner'] = {all = 'spawner'},
+   ['minecraft:nether_bricks'] = {all = 'nether_bricks'},
 }
 
 local blockAliasMap = {
