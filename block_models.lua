@@ -258,4 +258,87 @@ end
 
 end
 
+do
+local aabbs = {
+   {vec(0, 0, 15 / 16), vec(1, 1, 15 / 16)},
+}
+local aabbsRots = {
+   [0] = aabbs,
+   rotateAabbs(aabbs, vec(0, 90, 0)),
+   rotateAabbs(aabbs, vec(0, 180, 0)),
+   rotateAabbs(aabbs, vec(0, 270, 0)),
+}
+blockModels['minecraft:ladder'] = function(pos, endPos, block)
+   local _, hitpos, face = raycast:aabb(pos, endPos, aabbsRots[ faceToN[block.properties.facing] ])
+   if face then
+      local uv = facePosToUv[face]:apply(hitpos)
+      return terrainPng:getPixel(48 + uv.x * 16, 80 + uv.y * 16), face
+   end
+   return vec(0, 0, 0, 0)
+end
+end
+
+local farmPlantModel
+do
+local aabbs = {
+   { { vec(0.25, 0, 0), vec(0.25, 1, 1) } },
+   { { vec(0.75, 0, 0), vec(0.75, 1, 1) } },
+   { { vec(0, 0, 0.25), vec(1, 1, 0.25) } },
+   { { vec(0, 0, 0.75), vec(1, 1, 0.75) } },
+}
+local emptyVec4 = vec(0, 0, 0, 0)
+---@param pos Vector3
+---@param endPos Vector3
+---@param uvX number
+---@param uvY number
+---@return Vector4
+function farmPlantModel(pos, endPos, uvX, uvY)
+   local colors = {}
+   local depths = {}
+   for i, v in pairs(aabbs) do
+      local _, hitpos, face = raycast:aabb(pos, endPos, v)
+      depths[i] = 99
+      colors[i] = emptyVec4
+      if face then
+         local uv = facePosToUv[face]:apply(hitpos)
+         local color = terrainPng:getPixel(uvX + uv.x * 16, uvY + uv.y * 16)
+         if color.a > 0.5 then
+            colors[i] = color
+            depths[i] = (hitpos - pos):lengthSquared()
+         end
+      end
+   end
+   local smallestDepth = 99
+   local smallestI = 1
+   for i, v in pairs(depths) do
+      if v < smallestDepth then
+         smallestDepth = v
+         smallestI = i
+      end
+   end
+   return colors[smallestI]
+end
+
+end
+
+blockModels['minecraft:wheat'] = function(pos, endPos, block)
+   return farmPlantModel(
+      pos,
+      endPos,
+      128 + tonumber(block.properties.age) * 16,
+      80
+   ), 'up'
+end
+
+blockModels['minecraft:nether_wart'] = function(pos, endPos, block)
+   local age = tonumber(block.properties.age)
+   local offset = age == 0 and 0 or age == 3 and 32 or 16
+   return farmPlantModel(
+      pos,
+      endPos,
+      32 + offset,
+      224
+   ), 'up'
+end
+
 return blockModels

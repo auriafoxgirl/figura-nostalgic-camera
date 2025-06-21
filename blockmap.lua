@@ -120,6 +120,7 @@ local terrainAtlas = {
    bed_side2 = vec(112, 144),
    bed_front1 = vec(80, 144),
    bed_front2 = vec(128, 144),
+   spawner = vec(16, 64),
 }
 
 local uvRotMats = {
@@ -336,6 +337,7 @@ local blocks = {
       end,
       down = 'oak_planks'
    },
+   ['minecraft:spawner'] = {all = 'spawner'},
 }
 
 local blockAliasMap = {
