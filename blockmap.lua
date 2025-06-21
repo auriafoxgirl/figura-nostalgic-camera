@@ -122,6 +122,10 @@ local terrainAtlas = {
    bed_front2 = vec(128, 144),
    spawner = vec(16, 64),
    nether_bricks = vec(0, 224),
+   wooden_door_top = vec(16, 80),
+   wooden_door_bottom = vec(16, 96),
+   iron_door_top = vec(32, 80),
+   iron_door_bottom = vec(32, 96),
 }
 
 local uvRotMats = {
@@ -340,6 +344,48 @@ local blocks = {
    },
    ['minecraft:spawner'] = {all = 'spawner'},
    ['minecraft:nether_bricks'] = {all = 'nether_bricks'},
+   ['minecraft:oak_door'] = {all = function(block)
+      local faceN = faceToN[block.properties.facing] + 2
+      if block.properties.open == 'true' then
+         faceN = faceN + (block.properties.hinge == 'right' and 1 or -1)
+      end
+      return block.properties.half == 'upper' and terrainAtlas.wooden_door_top or terrainAtlas.wooden_door_bottom,
+         uvRotMats[ faceN % 4 ]
+   end,
+   side = function(block, face)
+      local side = block.properties.hinge == 'left'
+      local faceN = faceToN[block.properties.facing] - faceToN[face]
+      if block.properties.open == 'true' then
+         faceN = faceN + (side and 1 or -1)
+      end
+      faceN = faceN % 4
+      if faceN == 2 then
+         side = not side
+      end
+      return block.properties.half == 'upper' and terrainAtlas.wooden_door_top or terrainAtlas.wooden_door_bottom,
+         side and flipXMat or nil
+   end},
+['minecraft:iron_door'] = {all = function(block)
+      local faceN = faceToN[block.properties.facing] + 2
+      if block.properties.open == 'true' then
+         faceN = faceN + (block.properties.hinge == 'right' and 1 or -1)
+      end
+      return block.properties.half == 'upper' and terrainAtlas.iron_door_top or terrainAtlas.iron_door_bottom,
+         uvRotMats[ faceN % 4 ]
+   end,
+   side = function(block, face)
+      local side = block.properties.hinge == 'left'
+      local faceN = faceToN[block.properties.facing] - faceToN[face]
+      if block.properties.open == 'true' then
+         faceN = faceN + (side and 1 or -1)
+      end
+      faceN = faceN % 4
+      if faceN == 2 then
+         side = not side
+      end
+      return block.properties.half == 'upper' and terrainAtlas.iron_door_top or terrainAtlas.iron_door_bottom,
+         side and flipXMat or nil
+   end},
 }
 
 local blockAliasMap = {
