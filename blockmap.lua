@@ -581,14 +581,32 @@ local blocks = {
 
 local blockAliasMap = {
    ['minecraft:grass'] = 'minecraft:short_grass', -- for 1.20.2 and below
+   ['minecraft:lever'] = 'minecraft:air', -- too big
+   ['minecraft:fire'] = 'minecraft:air', -- too big
+   ['minecraft:brewing_stand'] = 'minecraft:air', -- too big
    ['minecraft:snow'] = 'minecraft:snow_block',
    ['minecraft:moss_block'] = 'minecraft:lime_wool',
    ['minecraft:andesite'] = 'minecraft:stone',
 
    ['minecraft:wet_sponge'] = 'minecraft:sponge',
 
-   ['minecraft:barrier'] = 'minecraft:air'
+   ['minecraft:barrier'] = 'minecraft:air',
+
+   ['minecraft:sandstone_slab'] = 'minecraft:sandstone',
+   ['minecraft:cobblestone_slab'] = 'minecraft:cobblestone',
+   ['minecraft:brick_slab'] = 'minecraft:bricks',
+   ['minecraft:stone_brick_slab'] = 'minecraft:stone_bricks',
 }
+
+for _, wood in pairs({
+   'oak', 'spruce', 'birch',
+   'jungle', 'acacia', 'dark_oak',
+   'mangrove', 'cherry', 'bamboo',
+   'crimson', 'warped', 'pale'
+}) do
+   blockAliasMap['minecraft:'..wood..'_planks'] = 'minecraft:oak_planks'
+   blockAliasMap['minecraft:'..wood..'_slab'] = 'minecraft:oak_planks'
+end
 
 local blockProperties = {
    ['minecraft:glass'] = {cull = 1},
@@ -661,9 +679,11 @@ for id, faces in pairs(blocks) do
 end
 
 for newId, id in pairs(blockAliasMap) do
-   local faces = blocks[id]
-   if faces then
-      setBlock(faces, id, newId)
+   if not blocks[newId] then
+      local faces = blocks[id]
+      if faces then
+         setBlock(faces, id, newId)
+      end
    end
 end
 
