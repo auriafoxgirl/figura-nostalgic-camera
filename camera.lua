@@ -95,15 +95,19 @@ local function raycastPixel(camPos, dir, x, y)
          local uv = facePosToUv[face]:apply(hitpos % 1).xy
          local uvOffset = faceBlockToTerrainUvMap[face][block.id]
          local uvFunc = faceBlockToUvFuncs[face][block.id]
+         local colorMul
          if uvFunc then
             local uvMat, newFace
-            uvOffset, uvMat, newFace = uvFunc(block, face)
+            uvOffset, uvMat, newFace, colorMul = uvFunc(block, face)
             if uvMat then
                uv = uvMat:apply(uv)
             end
             face = newFace or face
          end
          newColor = terrainPng:getPixel(uvOffset.x + uv.x * 16, uvOffset.y + uv.y * 16)
+         if colorMul then
+            newColor.rgb = newColor.rgb * colorMul
+         end
       end
 
       local newLight = (world.getLightLevel(hitpos + faceToNormal[face] * 0.4) / 15)
@@ -178,7 +182,17 @@ local function cameraUpdate()
 end
 
 function mod.takePhoto()
+   local camPos = client.getCameraPos()
    local camRot = client.getCameraRot()
+   if math.abs(math.abs(camRot.x) - 90) < 0.1 then -- stupid fix for figura bug
+      local p = vectors.worldToScreenSpace(camPos + vec(1, 0, 0) + client.getCameraDir())
+      local rot = math.deg(math.atan2(p.x, p.y))
+      rot = rot + 90
+      if camRot.x < 0 then
+         rot = -rot
+      end
+      camRot.y = rot
+   end
    local texture = textures:newTexture('preview'..textureId, res.x, res.y)
    textureId = (textureId + 1) % 100
    local dirMat = matrices.mat3()
@@ -189,7 +203,7 @@ function mod.takePhoto()
       events.WORLD_RENDER:register(cameraUpdate)
    end
    table.insert(cameraQueue, {
-      pos = client.getCameraPos(),
+      pos = camPos,
       dirMat = dirMat,
       x = 0,
       fov = fov,

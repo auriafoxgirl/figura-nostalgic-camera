@@ -132,6 +132,13 @@ local terrainAtlas = {
    piston_back = vec(208, 96),
    piston_side = vec(192, 96),
    piston_head = vec(144, 160),
+   repeater = vec(48, 128),
+   repeater_lit = vec(48, 144),
+   redstone_dot = vec(64, 176),
+   redstone_4 = vec(64, 160),
+   redstone_line = vec(80, 160),
+   redstone_curve = vec(80, 176),
+   redstone_3 = vec(80, 208),
 }
 
 local uvRotMats = {
@@ -193,6 +200,44 @@ local function pistonLogic(block, face)
    end
    return 3, 1
 end
+
+local redstoneMap = {
+   ['0000'] = {terrainAtlas.redstone_dot, 0}, -- dot
+   ['0001'] = {terrainAtlas.redstone_dot, 0}, -- impossible state
+   ['0010'] = {terrainAtlas.redstone_dot, 0}, -- impossible state
+   ['0011'] = {terrainAtlas.redstone_curve, 3}, -- curve
+   ['0100'] = {terrainAtlas.redstone_dot, 0}, -- impossible state
+   ['0101'] = {terrainAtlas.redstone_line, 0}, -- line
+   ['0110'] = {terrainAtlas.redstone_curve, 0}, -- curve
+   ['0111'] = {terrainAtlas.redstone_3, 0}, -- 3
+   ['1000'] = {terrainAtlas.redstone_dot, 0}, -- impossible state
+   ['1001'] = {terrainAtlas.redstone_curve, 2}, -- curve
+   ['1010'] = {terrainAtlas.redstone_line, 1}, -- line
+   ['1011'] = {terrainAtlas.redstone_3, 3}, -- 3
+   ['1100'] = {terrainAtlas.redstone_curve, 1}, -- curve
+   ['1101'] = {terrainAtlas.redstone_3, 2}, -- 3
+   ['1110'] = {terrainAtlas.redstone_3, 1}, -- 3
+   ['1111'] = {terrainAtlas.redstone_4, 0}, -- 4
+}
+
+local redstoneColor = {
+   [0] = vectors.hexToRGB('4c0000'),
+   vectors.hexToRGB('6f000b'),
+   vectors.hexToRGB('78000c'),
+   vectors.hexToRGB('82000d'),
+   vectors.hexToRGB('8c000e'),
+   vectors.hexToRGB('97000f'),
+   vectors.hexToRGB('a00010'),
+   vectors.hexToRGB('aa0011'),
+   vectors.hexToRGB('b40012'),
+   vectors.hexToRGB('be0013'),
+   vectors.hexToRGB('c90014'),
+   vectors.hexToRGB('d30015'),
+   vectors.hexToRGB('de0016'),
+   vectors.hexToRGB('e80017'),
+   vectors.hexToRGB('f21d19'),
+   vectors.hexToRGB('fd331c'),
+}
 
 local blocks = {
    ['minecraft:air'] = {all = 'air'},
@@ -473,6 +518,28 @@ local blocks = {
          return terrainAtlas.piston_back, mat
       end
    },
+   ['minecraft:repeater'] = { -- i cant do block models sadly
+      all = 'stone_slab_top',
+      up = function(block)
+         return block.properties.powered == 'true' and terrainAtlas.repeater_lit or terrainAtlas.repeater,
+            uvRotMats[ (faceToN[block.properties.facing] + 2) % 4 ]
+      end
+   },
+   ['minecraft:redstone_wire'] = {
+      side = function(block)
+         return terrainAtlas.redstone_line, uvRotMats[1], nil, redstoneColor[tonumber(block.properties.power)]
+      end,
+      up = function(block)
+         local shape = redstoneMap[
+            (block.properties.north ~= 'none' and '1' or '0')..
+            (block.properties.east ~= 'none' and '1' or '0')..
+            (block.properties.south ~= 'none' and '1' or '0')..
+            (block.properties.west ~= 'none' and '1' or '0')
+         ]
+         return shape[1], uvRotMats[ shape[2] ], nil, redstoneColor[tonumber(block.properties.power)]
+      end,
+      down = 'air'
+   }
 }
 
 local blockAliasMap = {
