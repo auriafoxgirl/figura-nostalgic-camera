@@ -438,4 +438,49 @@ do
    blockModels['minecraft:redstone_wall_torch'] = blockModels['minecraft:redstone_torch']
 end
 
+local fenceModel
+do
+local middleAabb = {vec(6 / 16, 0, 6 / 16), vec(10 / 16, 1, 10 / 16)}
+local northAabbs = {
+   {vec(7 / 16, 6 / 16, 0 / 16), vec(9 / 16, 9 / 16, 6 / 16)},
+   {vec(7 / 16, 12 / 16, 0 / 16), vec(9 / 16, 15 / 16, 6 / 16)}
+}
+local rotAabbs = {
+   north = northAabbs,
+   east = rotateAabbs(northAabbs, vec(0, -90, 0)),
+   south = rotateAabbs(northAabbs, vec(0, 180, 0)),
+   west = rotateAabbs(northAabbs, vec(0, 90, 0)),
+}
+---@param pos Vector3
+---@param endPos Vector3
+---@param block BlockState
+---@param uvX number
+---@param uvY number
+---@return Vector4, Entity.blockSide
+function fenceModel(pos, endPos, block, uvX, uvY)
+   local aabbs = {middleAabb}
+   for side, myAabbs in pairs(rotAabbs) do
+      if block.properties[side] == 'true' then
+         for _, v in pairs(myAabbs) do
+            table.insert(aabbs, v)
+         end
+      end
+   end
+   local _, hitpos, face = raycast:aabb(pos, endPos, aabbs)
+   if face then
+      local uv = facePosToUv[face]:apply(hitpos)
+      return terrainPng:getPixel(uvX + uv.x * 16, uvY + uv.y * 16), face
+   end
+   return vec(0, 0, 0, 0), 'up'
+end
+end
+
+blockModels['minecraft:oak_fence'] = function(pos, endPos, block)
+   return fenceModel(pos, endPos, block, 64, 0)
+end
+
+blockModels['minecraft:nether_brick_fence'] = function(pos, endPos, block)
+   return fenceModel(pos, endPos, block, 0, 224)
+end
+
 return blockModels
