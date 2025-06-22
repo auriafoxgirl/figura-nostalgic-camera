@@ -576,6 +576,11 @@ local blocks = {
          return terrainAtlas.detector_rail,
             block.properties.shape == 'east_west' and uvRotMats[1] or nil
       end
+   },
+   ['minecraft:stone_button'] = { -- buttons were only placable on walls in old versions
+      all = function(block)
+         return block.properties.face == 'wall' and terrainAtlas.stone or terrainAtlas.air
+      end
    }
 }
 
@@ -592,10 +597,21 @@ local blockAliasMap = {
 
    ['minecraft:barrier'] = 'minecraft:air',
 
+   ['minecraft:petrified_oak_slab'] = 'minecraft:oak_planks',
    ['minecraft:sandstone_slab'] = 'minecraft:sandstone',
    ['minecraft:cobblestone_slab'] = 'minecraft:cobblestone',
+   ['minecraft:cobblestone_stairs'] = 'minecraft:cobblestone',
    ['minecraft:brick_slab'] = 'minecraft:bricks',
+   ['minecraft:brick_stairs'] = 'minecraft:bricks',
    ['minecraft:stone_brick_slab'] = 'minecraft:stone_bricks',
+   ['minecraft:stone_brick_stairs'] = 'minecraft:stone_bricks',
+   ['minecraft:nether_brick_stairs'] = 'minecraft:nether_bricks',
+
+   ['minecraft:polished_blackstone_button'] = 'minecraft:stone_button',
+   ['minecraft:stone_pressure_plate'] = 'minecraft:stone',
+   ['minecraft:polished_blackstone_pressure_plate'] = 'minecraft:stone',
+   ['minecraft:light_weighted_pressure_plate'] = 'minecraft:stone',
+   ['minecraft:heavy_weighted_pressure_plate'] = 'minecraft:stone',
 }
 
 for _, wood in pairs({
@@ -606,6 +622,9 @@ for _, wood in pairs({
 }) do
    blockAliasMap['minecraft:'..wood..'_planks'] = 'minecraft:oak_planks'
    blockAliasMap['minecraft:'..wood..'_slab'] = 'minecraft:oak_planks'
+   blockAliasMap['minecraft:'..wood..'_stairs'] = 'minecraft:oak_planks'
+   blockAliasMap['minecraft:'..wood..'_button'] = 'minecraft:stone_button'
+   blockAliasMap['minecraft:'..wood..'_pressure_plate'] = 'minecraft:oak_planks'
 end
 
 local blockProperties = {
