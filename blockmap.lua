@@ -482,6 +482,8 @@ local blockAliasMap = {
    ['minecraft:andesite'] = 'minecraft:stone',
 
    ['minecraft:wet_sponge'] = 'minecraft:sponge',
+
+   ['minecraft:barrier'] = 'minecraft:air'
 }
 
 local blockProperties = {

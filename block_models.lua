@@ -341,4 +341,101 @@ blockModels['minecraft:nether_wart'] = function(pos, endPos, block)
    ), 'up'
 end
 
+local torchModel
+do
+
+local wallTorchMat = matrices.mat4()
+wallTorchMat:translate(0, -3 / 16, -8 / 16)
+local skewMat = matrices.mat4()
+skewMat.v32 = 0.25
+wallTorchMat:multiply(skewMat)
+local posMats = {
+   [0] = wallTorchMat,
+   matrices.mat4():translate(-0.5, 0, -0.5):rotate(0, -90, 0):translate(0.5, 0, 0.5):multiply(wallTorchMat),
+   matrices.mat4():translate(-0.5, 0, -0.5):rotate(0, 180, 0):translate(0.5, 0, 0.5):multiply(wallTorchMat),
+   matrices.mat4():translate(-0.5, 0, -0.5):rotate(0, 90, 0):translate(0.5, 0, 0.5):multiply(wallTorchMat),
+   matrices.mat4()
+}
+
+local posMatsInverse = {}
+for i, v in pairs(posMats) do
+   posMatsInverse[i] = v:inverted()
+end
+
+local emptyVec4 = vec(0, 0, 0, 0)
+
+-- local
+---@param aabbs {[1]: Vector3, [2]: Vector3}[]
+---@param pos Vector3
+---@param endPos Vector3
+---@param block BlockState
+---@param uvX number
+---@param uvY number
+---@return Vector4
+function torchModel(aabbs, pos, endPos, block, uvX, uvY)
+   local faceN = faceToN[block.properties.facing] or 4
+   local posMat = posMats[faceN]
+   local posMatInverse = posMatsInverse[faceN]
+   pos = posMat:apply(pos)
+   endPos = posMat:apply(endPos)
+   local colors = {}
+   local depths = {}
+   for i, v in pairs(aabbs) do
+      local aabb, hitpos, face = raycast:aabb(pos, endPos, v)
+      depths[i] = 99
+      colors[i] = emptyVec4
+      local realHitPos = posMatInverse:apply(hitpos)
+      if face and realHitPos.xz > vec(0, 0) and realHitPos.xz < vec(1, 1) and not aabb[face] then
+         local uv = facePosToUv[face]:apply(hitpos)
+         local offset = 0
+         if face == 'up' then
+            offset = offset - 1
+         elseif face == 'down' then
+            offset = offset + 7
+         end
+         local color = terrainPng:getPixel(uvX + uv.x * 16, uvY + uv.y * 16 + offset)
+         if color.a > 0.5 then
+            colors[i] = color
+            depths[i] = (hitpos - pos):lengthSquared()
+         end
+      end
+   end
+   local smallestDepth = 99
+   local smallestI = 1
+   for i, v in pairs(depths) do
+      if v < smallestDepth then
+         smallestDepth = v
+         smallestI = i
+      end
+   end
+   return colors[smallestI]
+end
+
+end
+
+do
+   local torchAabbs = {
+      { {vec(7 / 16, 0, 7 / 16), vec(9 / 16, 10 / 16, 9 / 16)} }
+   }
+
+   local redstoneTorchAabbs = {
+      { {vec(7 / 16, 0, 7 / 16), vec(9 / 16, 10 / 16, 9 / 16)} },
+      { {vec(6 / 16, 8 / 16, 7 / 16), vec(10 / 16, 11 / 16, 9 / 16), up = true, down = true, west = true, east = true} },
+      { {vec(7 / 16, 8 / 16, 6 / 16), vec(9 / 16, 11 / 16, 10 / 16), up = true, down = true, north = true, south = true} },
+   }
+
+   blockModels['minecraft:torch'] = function(pos, endPos, block)
+      return torchModel(torchAabbs, pos, endPos, block, 0, 80), 'up'
+   end
+   blockModels['minecraft:wall_torch'] = blockModels['minecraft:torch']
+
+   blockModels['minecraft:redstone_torch'] = function(pos, endPos, block)
+      if block.properties.lit then
+         return torchModel(redstoneTorchAabbs, pos, endPos, block, 48, 96), 'up'
+      end
+      return torchModel(torchAabbs, pos, endPos, block, 48, 112), 'up'
+   end
+   blockModels['minecraft:redstone_wall_torch'] = blockModels['minecraft:redstone_torch']
+end
+
 return blockModels
