@@ -139,6 +139,11 @@ local terrainAtlas = {
    redstone_line = vec(80, 160),
    redstone_curve = vec(80, 176),
    redstone_3 = vec(80, 208),
+   rail = vec(0, 128),
+   rail_curved = vec(0, 112),
+   powered_rail = vec(48, 160),
+   powered_rail_powered = vec(48, 176),
+   detector_rail = vec(48, 192),
 }
 
 local uvRotMats = {
@@ -539,6 +544,38 @@ local blocks = {
          return shape[1], uvRotMats[ shape[2] ], nil, redstoneColor[tonumber(block.properties.power)]
       end,
       down = 'air'
+   },
+   ['minecraft:rail'] = {
+      all = 'air',
+      up = function(block)
+         local shape = block.properties.shape
+         if shape == 'south_east' then
+            return terrainAtlas.rail_curved
+         elseif shape == 'south_west' then
+            return terrainAtlas.rail_curved, uvRotMats[3]
+         elseif shape == 'north_west' then
+            return terrainAtlas.rail_curved, uvRotMats[2]
+         elseif shape == 'north_east' then
+            return terrainAtlas.rail_curved, uvRotMats[1]
+         elseif shape == 'east_west' then
+            return terrainAtlas.rail, uvRotMats[1]
+         end
+         return terrainAtlas.rail
+      end
+   },
+   ['minecraft:powered_rail'] = {
+      all = 'air',
+      up = function(block)
+         return block.properties.powered == 'true' and terrainAtlas.powered_rail or terrainAtlas.powered_rail,
+            block.properties.shape == 'east_west' and uvRotMats[1] or nil
+      end
+   },
+   ['minecraft:detector_rail'] = {
+      all = 'air',
+      up = function(block)
+         return terrainAtlas.detector_rail,
+            block.properties.shape == 'east_west' and uvRotMats[1] or nil
+      end
    }
 }
 
