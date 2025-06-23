@@ -699,7 +699,9 @@ local blockAliasMap = {
    ['minecraft:composter'] = 'minecraft:cauldron',
    ['minecraft:chiseled_bookshelf'] = 'minecraft:bookshelf',
 
-   ['minecraft:crafter'] = 'minecraft:crafting_table'
+   ['minecraft:crafter'] = 'minecraft:crafting_table',
+
+   ['minecraft:tuff'] = 'minecraft:stone',
 }
 
 local blockAliasMap2 = {}
@@ -809,7 +811,7 @@ for _, blockId in pairs(client.getRegistry("minecraft:block")) do
             local dist = 1000
             local closestBlock = 'minecraft:pink_wool'
             for bl, c in pairs(woolColors) do
-               local d = (color * color - c * c):lengthSquared()
+               local d = (color - c):lengthSquared()
                if d < dist then
                   dist = d
                   closestBlock = bl
