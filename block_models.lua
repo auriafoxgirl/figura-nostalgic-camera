@@ -483,4 +483,29 @@ blockModels['minecraft:nether_brick_fence'] = function(pos, endPos, block)
    return fenceModel(pos, endPos, block, 0, 224)
 end
 
+do
+local aabbs = {
+   {vec(0, 5 / 16, 7 / 16), vec(2 / 16, 1, 9 / 16)},
+   {vec(14 / 16, 5 / 16, 7 / 16), vec(1, 1, 9 / 16)},
+   {vec(2 / 16, 6 / 16, 7 / 16), vec(14 / 16, 9 / 16, 9 / 16)},
+   {vec(2 / 16, 12 / 16, 7 / 16), vec(14 / 16, 15 / 16, 9 / 16)},
+   {vec(6 / 16, 9 / 16, 7 / 16), vec(10 / 16, 12 / 16, 9 / 16)},
+}
+local aabbs2 = rotateAabbs(aabbs, vec(0, 90, 0))
+
+blockModels['minecraft:oak_fence_gate'] = function(pos, endPos, block)
+   local _, hitpos, face = raycast:aabb(
+      pos,
+      endPos,
+      (block.properties.facing == 'east' or block.properties.facing == 'west') and aabbs2 or aabbs
+   )
+   if face then
+      local uv = facePosToUv[face]:apply(hitpos)
+      return terrainPng:getPixel(64 + uv.x * 16, uv.y * 16), face
+   end
+   return vec(0, 0, 0, 0)
+end
+
+end
+
 return blockModels
