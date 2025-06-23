@@ -1,3 +1,5 @@
+local blockModels = require('block_models')
+
 local terrainAtlas = {
    air = vec(184, 214),
    grass_top = vec(0, 0),
@@ -612,7 +614,95 @@ local blockAliasMap = {
    ['minecraft:polished_blackstone_pressure_plate'] = 'minecraft:stone',
    ['minecraft:light_weighted_pressure_plate'] = 'minecraft:stone',
    ['minecraft:heavy_weighted_pressure_plate'] = 'minecraft:stone',
+
+   ['minecraft:stripped_spruce_log'] = 'minecraft:oak_log',
+   ['minecraft:shulker_box'] = 'minecraft:purple_wool',
+   ['minecraft:tinted_glass'] = 'minecraft:glass',
+   ['minecraft:dirt_path'] = 'minecraft:farmland',
+   ['minecraft:packed_ice'] = 'minecraft:light_blue_wool',
+   ['minecraft:blue_ice'] = 'minecraft:cyan_wool',
+   ['minecraft:water_cauldron'] = 'minecraft:cauldron',
+   ['minecraft:lava_cauldron'] = 'minecraft:cauldron',
+   ['minecraft:powder_snow_cauldron'] = 'minecraft:cauldron',
+
+   ['minecraft:cherry_leaves'] = 'minecraft:pink_wool',
+   ['minecraft:azalea_leaves'] = 'minecraft:oak_leaves',
+   ['minecraft:flowering_azalea_leaves'] = 'minecraft:oak_leaves',
+   ['minecraft:manrove_propagule'] = 'minecraft:air',
+   ['minecraft:azalea'] = 'minecraft:air',
+   ['minecraft:flowering_azalea'] = 'minecraft:air',
+   ['minecraft:blue_orchid'] = 'minecraft:poppy',
+   ['minecraft:allium'] = 'minecraft:dandelion',
+   ['minecraft:azure_bluet'] = 'minecraft:dandelion',
+   ['minecraft:red_tulip'] = 'minecraft:poppy',
+   ['minecraft:orange_tulip'] = 'minecraft:dandelion',
+   ['minecraft:white_tulip'] = 'minecraft:dandelion',
+   ['minecraft:pink_tulip'] = 'minecraft:poppy',
+   ['minecraft:oxeye_daisy'] = 'minecraft:dandelion',
+   ['minecraft:cornflower'] = 'minecraft:poppy',
+   ['minecraft:lily_of_the_valley'] = 'minecraft:dandelion',
+   ['minecraft:torchflower'] = 'minecraft:dandelion',
+   ['minecraft:wither_rose'] = 'minecraft:poppy',
+   ['minecraft:pink_petals'] = 'minecraft:air',
+   ['minecraft:sunflower'] = 'minecraft:air',
+   ['minecraft:lilac'] = 'minecraft:air',
+   ['minecraft:rose_bush'] = 'minecraft:air',
+   ['minecraft:peony'] = 'minecraft:air',
+   ['minecraft:pitcher_plant'] = 'minecraft:air',
+
+   ['minecraft:dark_oak_log'] = 'minecraft:spruce_log',
+   ['minecraft:stripped_dark_oak_log'] = 'minecraft:spruce_log',
+   ['minecraft:dark_oak_wood'] = 'minecraft:spruce_log',
+   ['minecraft:stripped_dark_oak_wood'] = 'minecraft:spruce_log',
+   ['minecraft:quartz_block'] = 'minecraft:iron_block',
+   ['minecraft:smooth_quartz'] = 'minecraft:snow_block',
+   ['minecraft:sea_lantern'] = 'minecraft:diamond_block',
+
+   ['minecraft:tall_grass'] = 'minecraft:air',
+
+   ['minecraft:copper_ore'] = 'minecraft:gold_ore',
+   ['minecraft:emerald_ore'] = 'minecraft:redstone_ore',
+   ['minecraft:deepslate_coal_ore'] = 'minecraft:coal_ore',
+   ['minecraft:deepslate_iron_ore'] = 'minecraft:iron_ore',
+   ['minecraft:deepslate_copper_ore'] = 'minecraft:gold_ore',
+   ['minecraft:deepslate_gold_ore'] = 'minecraft:gold_ore',
+   ['minecraft:deepslate_redstone_ore'] = 'minecraft:redstone_ore',
+   ['minecraft:deepslate_emerald_ore'] = 'minecraft:redstone_ore',
+   ['minecraft:deepslate_lapis_ore'] = 'minecraft:lapis_ore',
+   ['minecraft:deepslate_diamond_ore'] = 'minecraft:diamond_ore',
+   ['minecraft:nether_gold_ore'] = 'minecraft:netherrack',
+   ['minecraft:nether_quartz_ore'] = 'minecraft:netherrack',
+
+   ['minecraft:dark_oak_fence'] = 'minecraft:nether_brick_fence',
+   ['minecraft:nether_brick_wall'] = 'minecraft:nether_brick_fence',
+
+   ['minecraft:red_nether_bricks'] = 'minecraft:nether_bricks',
+   ['minecraft:red_nether_brick_stairs'] = 'minecraft:nether_bricks',
+   ['minecraft:red_nether_brick_slab'] = 'minecraft:nether_bricks',
+   ['minecraft:red_nether_brick_wall'] = 'minecraft:nether_brick_fence',
+
+   ['minecraft:ender_chest'] = 'minecraft:chest',
+   ['minecraft:iron_trapdoor'] = 'minecraft:oak_trapdoor',
+   ['minecraft:beacon'] = 'minecraft:diamond_block',
+   ['minecraft:candle'] = 'minecraft:air',
+   ['minecraft:candle_cake'] = 'minecraft:cake',
+
+   ['minecraft:crimson_nylium'] = 'minecraft:netherrack',
+   ['minecraft:warped_nylium'] = 'minecraft:netherrack',
+
+   ['minecraft:infested_stone_bricks'] = 'minecraft:stone_bricks',
+   ['minecraft:infested_stone'] = 'minecraft:stone',
+   ['minecraft:infested_mossy_stone_bricks'] = 'minecraft:mossy_stone_bricks',
+   ['minecraft:infested_cracked_stone_bricks'] = 'minecraft:cracked_stone_bricks',
+   ['minecraft:infested_cobblestone'] = 'minecraft:cobblestone',
+
+   ['minecraft:composter'] = 'minecraft:cauldron',
+   ['minecraft:chiseled_bookshelf'] = 'minecraft:bookshelf',
+
+   ['minecraft:crafter'] = 'minecraft:crafting_table'
 }
+
+local blockAliasMap2 = {}
 
 for _, wood in pairs({
    'oak', 'spruce', 'birch',
@@ -620,11 +710,124 @@ for _, wood in pairs({
    'mangrove', 'cherry', 'bamboo',
    'crimson', 'warped', 'pale'
 }) do
-   blockAliasMap['minecraft:'..wood..'_planks'] = 'minecraft:oak_planks'
-   blockAliasMap['minecraft:'..wood..'_slab'] = 'minecraft:oak_planks'
-   blockAliasMap['minecraft:'..wood..'_stairs'] = 'minecraft:oak_planks'
-   blockAliasMap['minecraft:'..wood..'_button'] = 'minecraft:stone_button'
-   blockAliasMap['minecraft:'..wood..'_pressure_plate'] = 'minecraft:oak_planks'
+   blockAliasMap2['minecraft:'..wood..'_planks'] = 'minecraft:oak_planks'
+   blockAliasMap2['minecraft:'..wood..'_slab'] = 'minecraft:oak_planks'
+   blockAliasMap2['minecraft:'..wood..'_stairs'] = 'minecraft:oak_planks'
+   blockAliasMap2['minecraft:'..wood..'_button'] = 'minecraft:stone_button'
+   blockAliasMap2['minecraft:'..wood..'_pressure_plate'] = 'minecraft:oak_planks'
+   blockAliasMap2['minecraft:'..wood..'_fence'] = 'minecraft:oak_fence'
+   blockAliasMap2['minecraft:'..wood..'_fence_gate'] = 'minecraft:oak_fence_gate'
+   blockAliasMap2['minecraft:'..wood..'_log'] = 'minecraft:oak_log'
+   blockAliasMap2['minecraft:stripped_'..wood..'_log'] = 'minecraft:oak_planks'
+   blockAliasMap2['minecraft:stripped_'..wood..'_wood'] = 'minecraft:oak_planks'
+   blockAliasMap2['minecraft:'..wood..'_wood'] = 'minecraft:oak_log'
+   blockAliasMap2['minecraft:'..wood..'_trapdoor'] = 'minecraft:oak_trapdoor'
+   blockAliasMap2['minecraft:'..wood..'_leaves'] = 'minecraft:oak_leaves'
+   blockAliasMap2['minecraft:'..wood..'_sapling'] = 'minecraft:oak_sapling'
+   blockAliasMap2['minecraft:'..wood..'_sign'] = 'minecraft:air' -- cant do block model
+   blockAliasMap2['minecraft:'..wood..'_wall_sign'] = 'minecraft:air'
+   blockAliasMap2['minecraft:'..wood..'_hanging_sign'] = 'minecraft:air'
+   blockAliasMap2['minecraft:'..wood..'_wall_hanging_sign'] = 'minecraft:air'
+   blockAliasMap2['minecraft:'..wood..'_door'] = 'minecraft:oak_door'
+end
+
+local woolColors = {}
+
+for _, color in pairs({
+   "white", "black", "red", "green",
+   "brown", "blue", "purple", "cyan",
+   "light_gray", "gray", "pink", "lime",
+   "yellow", "light_blue", "magenta", "orange",
+}) do
+   woolColors['minecraft:'..color..'_wool'] = world.newBlock('minecraft:'..color..'_wool'):getMapColor()
+   blockAliasMap2['minecraft:'..color..'_concrete'] = 'minecraft:'..color..'_wool'
+   blockAliasMap2['minecraft:'..color..'_concrete_powder'] = 'minecraft:'..color..'_wool'
+   blockAliasMap2['minecraft:'..color..'_shulker_box'] = 'minecraft:'..color..'_wool'
+   blockAliasMap2['minecraft:'..color..'_terracotta'] = 'minecraft:'..color..'_wool'
+   blockAliasMap2['minecraft:'..color..'_glazed_terracotta'] = 'minecraft:'..color..'_wool'
+   blockAliasMap2['minecraft:'..color..'_candle'] = 'minecraft:air'
+   blockAliasMap2['minecraft:'..color..'_candle_cake'] = 'minecraft:cake'
+   blockAliasMap2['minecraft:'..color..'_stained_glass'] = 'minecraft:glass'
+   blockAliasMap2['minecraft:'..color..'_stained_glass_pane'] = 'minecraft:glass_pane'
+   blockAliasMap2['minecraft:'..color..'_carpet'] = 'minecraft:air'
+   blockAliasMap2['minecraft:'..color..'_banner'] = 'minecraft:air'
+   blockAliasMap2['minecraft:'..color..'_wall_banner'] = 'minecraft:air'
+   blockAliasMap2['minecraft:'..color..'_bed'] = 'minecraft:red_bed'
+end
+
+for _, waxed in pairs({'', 'waxed_'}) do
+   for oxidized, color in pairs({
+      [''] = 'orange',
+      exposed_ = 'orange',
+      weathered_ = 'cyan',
+      oxidized_ = 'cyan'
+   }) do
+      local suffix = oxidized == '' and '_block' or ''
+      blockAliasMap2['minecraft:'..waxed..oxidized..'copper'..suffix] = 'minecraft:'..color..'_wool'
+      blockAliasMap2['minecraft:'..waxed..oxidized..'cut_copper'] = 'minecraft:'..color..'_wool'
+      blockAliasMap2['minecraft:'..waxed..oxidized..'cut_copper_stairs'] = 'minecraft:bricks'
+      blockAliasMap2['minecraft:'..waxed..oxidized..'cut_copper_slab'] = 'minecraft:bricks'
+      blockAliasMap2['minecraft:'..waxed..oxidized..'chiseled_copper'] = 'minecraft:'..color..'_wool'
+      blockAliasMap2['minecraft:'..waxed..oxidized..'copper_grate'] = 'minecraft:glass'
+      blockAliasMap2['minecraft:'..waxed..oxidized..'copper_door'] = 'minecraft:oak_door'
+      blockAliasMap2['minecraft:'..waxed..oxidized..'copper_trapdoor'] = 'minecraft:oak_trapdoor'
+      blockAliasMap2['minecraft:'..waxed..oxidized..'copper_bulb'] = 'minecraft:'..color..'_wool'
+   end
+end
+
+for coral, color in pairs({
+   tube = 'blue',
+   brain = 'pink',
+   bubble = 'purple',
+   fire = 'red',
+   horn = 'yellow'
+}) do
+   for _, alive in pairs({'', 'dead_'}) do
+      if alive ~= '' then
+         color = 'light_gray'
+      end
+      blockAliasMap['minecraft:'..alive..coral..'_coral_block'] = 'minecraft:'..color..'_wool'
+      blockAliasMap['minecraft:'..alive..coral..'_coral'] = 'minecraft:air'
+      blockAliasMap['minecraft:'..alive..coral..'_coral_fan'] = 'minecraft:air'
+      blockAliasMap['minecraft:'..alive..coral..'_coral_wall_fan'] = 'minecraft:air'
+   end
+end
+
+-- automatically add block aliases
+for _, blockId in pairs(client.getRegistry("minecraft:block")) do
+   if not (blockAliasMap[blockId] or blockModels[blockId] or blocks[blockId]) then
+      local ok, block = pcall(world.newBlock, blockId) -- world.newBlock errors for experimental blocks
+      if ok then
+         if blockId:match('^minecraft:potted_') or blockId:match('^minecraft:(.-)_wall$') then
+            blockAliasMap[blockId] = 'minecraft:oak_fence'
+         elseif blockId:match('_slab$') or blockId:match('_stairs$') then
+            blockAliasMap[blockId] = 'minecraft:cobblestone'
+         elseif blockId:match('deepslate$') then
+            blockAliasMap[blockId] = 'minecraft:stone'
+         elseif block:isFullCube() then
+            local color = block:getMapColor()
+            local dist = 1000
+            local closestBlock = 'minecraft:pink_wool'
+            for bl, c in pairs(woolColors) do
+               local d = (color * color - c * c):lengthSquared()
+               if d < dist then
+                  dist = d
+                  closestBlock = bl
+               end
+            end
+            blockAliasMap[blockId] = closestBlock
+         else
+            blockAliasMap[blockId] = 'minecraft:air'
+         end
+      end
+   end
+end
+
+
+for i, v in pairs(blockAliasMap2) do
+   if not blockAliasMap[i] then
+      blockAliasMap[i] = v
+   end
 end
 
 local blockProperties = {
@@ -707,9 +910,10 @@ for newId, id in pairs(blockAliasMap) do
 end
 
 -- generate aliases for block models
-local blockModels = require('block_models')
 for newId, id in pairs(blockAliasMap) do
-   blockModels[newId] = blockModels[id]
+   if not blockModels[newId] then
+      blockModels[newId] = blockModels[id]
+   end
 end
 
 return finalList, blockFuncs, blockPropertiesFinal

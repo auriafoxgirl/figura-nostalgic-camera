@@ -214,7 +214,7 @@ local bigChestOffsets = {
 
 blockModels['minecraft:chest'] = function(pos, endPos, block)
    local faceN = faceToN[block.properties.facing]
-   if block.properties.type == 'single' then
+   if block.properties.type == 'single' or not block.properties.type then
       local _, hitpos, face = raycast:aabb(pos, endPos, aabbsSmallRots[ faceN ])
       if face then
          local uv = facePosToUv[face]:apply(hitpos)
@@ -459,8 +459,9 @@ local rotAabbs = {
 ---@return Vector4, Entity.blockSide
 function fenceModel(pos, endPos, block, uvX, uvY)
    local aabbs = {middleAabb}
+   local properties = block.properties
    for side, myAabbs in pairs(rotAabbs) do
-      if block.properties[side] == 'true' then
+      if properties[side] ~= 'false' and properties[side] ~= 'none' then
          for _, v in pairs(myAabbs) do
             table.insert(aabbs, v)
          end
