@@ -702,6 +702,9 @@ local blockAliasMap = {
    ['minecraft:crafter'] = 'minecraft:crafting_table',
 
    ['minecraft:tuff'] = 'minecraft:stone',
+
+   ['minecraft:smooth_sandstone'] = 'minecraft:sandstone',
+   ['minecraft:smooth_sandstone_slab'] = 'minecraft:sandstone',
 }
 
 local blockAliasMap2 = {}
