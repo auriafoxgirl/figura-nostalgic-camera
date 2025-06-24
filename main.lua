@@ -1,3 +1,3 @@
-local camera = require('camera')
+local camera=require('camera')
 
 camera.takePhoto()
