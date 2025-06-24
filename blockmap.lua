@@ -798,6 +798,12 @@ for coral, color in pairs({
    end
 end
 
+for i, v in pairs(blockAliasMap2) do
+   if not blockAliasMap[i] then
+      blockAliasMap[i]=v
+   end
+end
+
 -- automatically add block aliases
 for _, blockId in pairs(client.getRegistry("minecraft:block")) do
    if not (blockAliasMap[blockId] or blockModels[blockId] or blocks[blockId]) then
@@ -825,13 +831,6 @@ for _, blockId in pairs(client.getRegistry("minecraft:block")) do
             blockAliasMap[blockId]='minecraft:air'
          end
       end
-   end
-end
-
-
-for i, v in pairs(blockAliasMap2) do
-   if not blockAliasMap[i] then
-      blockAliasMap[i]=v
    end
 end
 
