@@ -2,8 +2,12 @@
    "name": "nostalgic camera",
    "color": "#bbff75",
    "badge_color_donator": "#bbff75",
+   "autoScripts": [
+      "main.lua"
+   ],
    "authors": [
       "AuriaFoxGirl",
-      "assets from old version of minecraft"
+      "§l§f§nCredits§r",
+      "old minecraft textures - mojang studios"
    ]
 }

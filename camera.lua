@@ -18,7 +18,6 @@ local sunPng=textures['sun'] or textures['textures.sun']
 local moonPng=textures['moon_phases'] or textures['textures.moon_phases']
 
 local mathMin = math.min
-local mathAbs = math.abs
 
 local faceToNormal={
    up=vec(0, 1, 0),
@@ -87,15 +86,15 @@ local cloudColor = vec(0, 0, 0)
 local skySideMat = matrices.mat3()
 local starStrength = 1
 
-local previewSprite=models:newPart('', 'HUD'):newSprite('')
-previewSprite:setLight(15, 15)
-function events.tick()
-   local size=vec(res.x / res.y, 1, 0)
-   size=size * client.getScaledWindowSize().y * 0.4
-   -- previewSprite:setTexture(textures['terrain'], 1, 1)
-   previewSprite:setTexture(texture, 1, 1)
-   previewSprite:setScale(size)
-end
+-- local previewSprite=models:newPart('', 'HUD'):newSprite('')
+-- previewSprite:setLight(15, 15)
+-- function events.tick()
+--    local size=vec(res.x / res.y, 1, 0)
+--    size=size * client.getScaledWindowSize().y * 0.4
+--    -- previewSprite:setTexture(textures['terrain'], 1, 1)
+--    previewSprite:setTexture(texture, 1, 1)
+--    previewSprite:setScale(size)
+-- end
 
 local function raycastPixel(camPos, dir, x, y)
    local pos=camPos
@@ -270,17 +269,28 @@ local function cameraUpdate()
       end
       return
    end
+   -- init
+   if not camera.texture then
+      camera.texture = textures:newTexture('preview'..textureId, camera.res.x, camera.res.y)
+      textureId=(textureId + 1) % 4
+      if camera.startFunc then
+         camera.startFunc(camera.texture)
+      end
+      texture=camera.texture
+      sunMat=camera.sunMat
+      moonUv=camera.moonUv
+      fogColor=camera.fogColor
+      skyColor=camera.skyColor
+      skyColorTop=camera.skyColorTop
+      cloudColor=camera.cloudColor
+      skySideMat=camera.skySideMat
+      starStrength=camera.starStrength
+   end
+   -- render
    local pos=camera.pos
    local dirMat=camera.dirMat
-   texture=camera.texture
-   sunMat=camera.sunMat
-   moonUv=camera.moonUv
-   fogColor=camera.fogColor
-   skyColor=camera.skyColor
-   skyColorTop=camera.skyColorTop
-   cloudColor=camera.cloudColor
-   skySideMat=camera.skySideMat
-   starStrength=camera.starStrength
+
+   local res = camera.res
 
    local maxHeight=res.y - 1
    local yScale=2 / -maxHeight
@@ -299,6 +309,9 @@ local function cameraUpdate()
    texture:update()
    if camera.x >= res.x then
       table.remove(cameraQueue, 1)
+      if camera.finishFunc then
+         camera.finishFunc(texture)
+      end
       -- print('size', #texture:save() / 1000, 'bytes')
    end
 end
@@ -315,7 +328,9 @@ end
 
 addToQueue({terrainPng=true})
 
-function mod.takePhoto()
+---@param startFunc? fun(texture: Texture)
+---@param finishFunc? fun(texture: Texture)
+function mod.takePhoto(startFunc, finishFunc)
    local camPos=client.getCameraPos()
    local camRot=client.getCameraRot()
    if math.abs(math.abs(camRot.x) - 90) < 0.1 then -- stupid fix for figura bug
@@ -327,8 +342,6 @@ function mod.takePhoto()
       end
       camRot.y=rot
    end
-   local texture=textures:newTexture('preview'..textureId, res.x, res.y)
-   textureId=(textureId + 1) % 100
    local dirMat=matrices.mat3()
    local fov=math.tan(math.rad(client.getFOV() / 2))
    dirMat:scale(fov, fov, 1)
@@ -382,7 +395,8 @@ function mod.takePhoto()
       dirMat=dirMat,
       x=0,
       fov=fov,
-      texture=texture,
+      texture = nil,
+      res = res,
       sunMat = sunMat,
       moonUv = moonUv,
       fogColor = fogColor,
@@ -390,8 +404,30 @@ function mod.takePhoto()
       skyColorTop = skyColorTop,
       cloudColor = cloudColor,
       skySideMat = skySideMat,
-      starStrength = starStrength
+      starStrength = starStrength,
+      startFunc = startFunc,
+      finishFunc = finishFunc
    })
+end
+
+---@return number
+function mod.getQueueSize()
+   return #cameraQueue
+end
+
+---@param newRes Vector2
+function mod.setResolution(newRes)
+   res = newRes
+end
+
+---@param dist number
+function mod.setRenderDistance(dist)
+   raycastBlocksDist = dist
+end
+
+---@param speed number
+function mod.setRenderSpeed(speed)
+   cameraSpeed = speed
 end
 
 return mod
