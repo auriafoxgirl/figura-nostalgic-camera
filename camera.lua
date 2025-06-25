@@ -110,6 +110,8 @@ local function raycastPixel(camPos, dir, x, y)
       local blockProperties=blockPropertiesList[block.id]
       local newCullId=blockProperties.cull or hitpos
 
+      local blockPos = block:getPos()
+
       local distTraveled=(hitpos - pos):length()
 
       blocksDist=blocksDist - distTraveled
@@ -119,11 +121,11 @@ local function raycastPixel(camPos, dir, x, y)
          oldLight=newLight
       else
          if block:isFullCube() and block:isOpaque() then -- stupid fix
-            local p = hitpos - block:getPos()
+            local p = hitpos - blockPos
             local _, hit, newFace = raycast:aabb(p - dir, p + dir, cubeAabb)
             if newFace then
                face = newFace
-               hitpos = hit
+               hitpos = hit + blockPos
             end
          end
       end
@@ -131,7 +133,7 @@ local function raycastPixel(camPos, dir, x, y)
       local newColor
       if blockModels[block.id] then
          local newFace
-         local p=hitpos - block:getPos()
+         local p=hitpos - blockPos
          newColor, newFace=blockModels[block.id](p - dir * 4, p + dir * 64, block)
          if newFace then
             face=newFace
@@ -178,7 +180,6 @@ local function raycastPixel(camPos, dir, x, y)
 
       pos=hitpos
       if fluidMode == newFluidMode then
-         local blockPos=block:getPos()
          pos=skipBlock(pos - blockPos, dir) + blockPos + dir * 0.05
          blocksDist=blocksDist - (pos - hitpos):length()
       else
