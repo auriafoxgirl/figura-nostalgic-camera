@@ -18,6 +18,7 @@ local sunPng=textures['sun'] or textures['textures.sun']
 local moonPng=textures['moon_phases'] or textures['textures.moon_phases']
 
 local mathMin = math.min
+local mathAbs = math.abs
 
 local faceToNormal={
    up=vec(0, 1, 0),
@@ -61,6 +62,10 @@ local skipBlockAabbs={
    {vec(-1, -1, -1), vec(0, 2, 2)},
    {vec(-1, -1, -1), vec(2, 0, 2)},
    {vec(-1, -1, -1), vec(2, 2, 0)},
+}
+
+local cubeAabb = {
+   {vec(-0.001, -0.001, -0.001), vec(1.001, 1.001, 1.001)}
 }
 
 ---@param pos Vector3
@@ -109,6 +114,20 @@ local function raycastPixel(camPos, dir, x, y)
 
       blocksDist=blocksDist - distTraveled
 
+      local newLight=(world.getLightLevel(hitpos + faceToNormal[face] * 0.4) / 15)
+      if newLight > 0 or distTraveled > 0.3 then -- bad fix because raycast stupid
+         oldLight=newLight
+      else
+         if block:isFullCube() and block:isOpaque() then -- stupid fix
+            local p = hitpos - block:getPos()
+            local _, hit, newFace = raycast:aabb(p - dir, p + dir, cubeAabb)
+            if newFace then
+               face = newFace
+               hitpos = hit
+            end
+         end
+      end
+
       local newColor
       if blockModels[block.id] then
          local newFace
@@ -136,10 +155,6 @@ local function raycastPixel(camPos, dir, x, y)
          end
       end
 
-      local newLight=(world.getLightLevel(hitpos + faceToNormal[face] * 0.4) / 15)
-      if newLight > 0 or distTraveled > 0.1 then -- bad fix because raycast stupid
-         oldLight=newLight
-      end
       newColor.rgb=newColor.rgb * oldLight * faceShading[face]
 
       local colorApplied=false
