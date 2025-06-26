@@ -11,13 +11,17 @@ local whitePixel = textures.whitePixel or textures:newTexture('whitePixel', 1, 1
 -- action wheel
 ---@param page Page
 ---@param title string
----@param options string[]
+---@param options (string|number)[]
 ---@param setFunc fun(i: number, v: string)
+---@param default number?
 ---@param configName string?
+---@param description string?
 ---@return Action
-local function actionWheelSlider(page, title, options, setFunc, configName)
+local function actionWheelSlider(page, title, options, setFunc, default, configName, description)
+   default = default or 1
+   description = description and description..'\n' or ''
    local action = page:newAction()
-   local option = 1
+   local option = default
    local optionOffset = 0
    if configName then
       local value = config:load(configName)
@@ -27,10 +31,12 @@ local function actionWheelSlider(page, title, options, setFunc, configName)
    end
    local function updateTitle()
       local text = {
-         { text = title }, '\n'
+         { text = title }, '\n',
+         { text = description, color = 'gray' }
       }
       for i, v in ipairs(options) do
          table.insert(text, '\n')
+         v = tostring(v)
          if i == option then
             table.insert(text, {text = v, color = 'white'})
          else
@@ -62,6 +68,9 @@ local function actionWheelSlider(page, title, options, setFunc, configName)
    action:onScroll(scroll)
    action:onLeftClick(function()
       scroll(-1)
+   end)
+   action:onRightClick(function()
+      scroll(option - default)
    end)
 
    updateTitle()
@@ -103,8 +112,94 @@ actionWheelSlider(mainPage, 'Resolution', resolutionsList, function(_, v)
    local x, y = v:match('^(%d+)x(%d+)')
    x, y = tonumber(x), tonumber(y)
    camera.setResolution(vec(x, y))
-end, 'resolution')
+end, 1, 'resolution')
    :setItem(makeItemEmoji('mcb_end_crystal'))
+
+actionWheelSlider(mainPage, 'Render distance', {
+   '32§l  §rblocks',
+   '64§l  §rblocks',
+   '128 blocks',
+   '256 blocks',
+   '512 blocks',
+}, function(i, v)
+   local dist = tonumber(v:match('%d+'))
+   camera.setRenderDistance(dist)
+end, 3, 'render_distance')
+   :setItem(makeItemEmoji('question'))
+
+actionWheelSlider(mainPage, 'Render speed', {
+   1,
+   2,
+   4,
+   8,
+   16,
+   32,
+}, function(i, v)
+   camera.setRenderSpeed(v)
+end, 3, 'render_speed', 'Vertical lines per frame\nuse slower on higher resolutions\nto avoid lag')
+   :setItem(makeItemEmoji('question'))
+
+local photoSaved = true
+local lastPhotoFilePath = ''
+local textureToSave = nil
+
+local savePhotoAction = mainPage:newAction()
+
+local function savePhoto()
+   if photoSaved then
+      return
+   end
+   photoSaved = true
+
+   savePhotoAction:hoverColor(0.5, 0.5, 0.5)
+   savePhotoAction:hoverItem(makeItemEmoji('checkmark'))
+
+   local saved = textureToSave:save()
+   local buffer = data:createBuffer(#saved)
+   local stream = file:openWriteStream(lastPhotoFilePath)
+   buffer:writeBase64(saved)
+   buffer:setPosition(0)
+   buffer:writeToStream(stream)
+   stream:close()
+   buffer:close()
+end
+
+local savePhotoActionItem = makeItemEmoji('photo')
+savePhotoAction:title('Save photo')
+   :item(savePhotoActionItem)
+   :hoverColor(0.5, 0.5, 0.5)
+   :onLeftClick(savePhoto)
+
+local autoSavePhotos = config:load('auto_save_photos')
+if autoSavePhotos == nil then
+   autoSavePhotos = true
+end
+local autoSavePhotosAction = mainPage:newAction()
+autoSavePhotosAction:setToggleColor(0, 0.75, 0)
+   :title('Auto save photos')
+   :item(makeItemEmoji('paper'))
+
+local function setAutoSave(x)
+   if autoSavePhotos ~= x then
+      config:save('auto_save_photos', x)
+   end
+   autoSavePhotos = x
+   if x then
+      autoSavePhotosAction:hoverColor(0.5, 1, 0.5)
+   else
+      autoSavePhotosAction:hoverColor(1, 1, 1)
+   end
+end
+
+setAutoSave(autoSavePhotos)
+autoSavePhotosAction:setToggled(autoSavePhotos)
+autoSavePhotosAction:onToggle(setAutoSave)
+autoSavePhotosAction:onRightClick(function()
+   setAutoSave(true)
+   autoSavePhotosAction:setToggled(true)
+end)
+
+mainPage:newAction():setHoverColor(0, 0, 0)
 
 -- take photo
 local previewHud = models:newPart('preview', 'Hud')
@@ -128,11 +223,11 @@ local previewForceVisible = false
 function events.tick()
    oldPreviewAnim = previewAnim
    previewVisible = math.max(previewVisible - 1, 0)
-   if previewForceVisible then
+   if previewForceVisible or (previewTexture and action_wheel:isEnabled()) then
       previewVisible = math.max(previewVisible, 1)
    end
    if previewVisible >= 1 then
-      previewAnim = math.lerp(previewAnim, 1, 0.3)
+      previewAnim = math.lerp(previewAnim, 1, 0.35)
    else
       previewAnim = previewAnim * 0.7
    end
@@ -152,9 +247,12 @@ previewHud.preRender = function(delta)
    local size = vec(res.x / res.y, 1, 0)
    size = size * client.getScaledWindowSize().y * 0.4
 
-   previewSprite:setScale(size):setColor(1, 1, 1, anim)
-   bgSprite:setScale(size + vec(2, 13, 0)):setColor(1, 1, 1, anim)
-   previewText:setOpacity(anim)
+   local opacity = math.clamp(1 - (1 - anim) * 1.2, 0, 1)
+   opacity = 3 * opacity ^ 2 - 2 * opacity ^ 3
+
+   previewSprite:setScale(size):setColor(1, 1, 1, opacity)
+   bgSprite:setScale(size + vec(2, 13, 0)):setColor(1, 1, 1, opacity)
+   previewText:setOpacity(opacity)
 
    previewHud:setPos((1 - anim) * (size.x + 16), 0, 0)
    previewText:setPos(-5, -size.y - 7, -1)
@@ -188,16 +286,17 @@ local function takePhoto()
       previewForceVisible = false
       previewVisible = 100
 
-      takePhotoAction:setHoverColor(1, 1, 1)
+      textureToSave = texture
+      lastPhotoFilePath = myFilePath
+      photoSaved = false
+      savePhotoAction:hoverColor()
+      savePhotoAction:setHoverItem(savePhotoActionItem)
 
-      local saved = texture:save()
-      local buffer = data:createBuffer(#saved)
-      local stream = file:openWriteStream(myFilePath)
-      buffer:writeBase64(saved)
-      buffer:setPosition(0)
-      buffer:writeToStream(stream)
-      stream:close()
-      buffer:close()
+      takePhotoAction:setHoverColor()
+
+      if autoSavePhotos then
+         savePhoto()
+      end
    end)
 end
 
