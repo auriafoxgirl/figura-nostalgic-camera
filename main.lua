@@ -249,6 +249,7 @@ previewHud.preRender = function(delta)
 
    local opacity = math.clamp(1 - (1 - anim) * 1.2, 0, 1)
    opacity = 3 * opacity ^ 2 - 2 * opacity ^ 3
+   opacity = math.clamp(opacity, 0.01, 1)
 
    previewSprite:setScale(size):setColor(1, 1, 1, opacity)
    bgSprite:setScale(size + vec(2, 13, 0)):setColor(1, 1, 1, opacity)
@@ -304,7 +305,7 @@ end
 local iconModel = models:newPart('', 'Skull')
 iconModel:setRot(30, -45, 0)
 local iconText = iconModel:newText('')
-iconText:setPos(7, 9.2, 0):setScale(1.8)
+iconText:setPos(7, 9.2, 0):setScale(1.8):setLight(15, 15)
 
 events.SKULL_RENDER:register(function(_, _, item)
    iconModel:visible(false)
