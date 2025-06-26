@@ -2,7 +2,9 @@ if not host:isHost() then return end
 
 local imageFilePath = 'photos/photo_%s.png'
 
-file:mkdirs(imageFilePath:gsub('/[^/]*$', ''))
+local imageFolderPath = imageFilePath:gsub('/[^/]*$', '/')
+file:mkdirs(imageFolderPath)
+
 local filePhotoI = 0
 
 local camera=require('camera')
@@ -123,11 +125,14 @@ actionWheelSlider(mainPage, 'Render distance', {
    '512 blocks',
 }, function(i, v)
    local dist = tonumber(v:match('%d+'))
+   if dist < 60 then -- add some extra blocks so its actually visible because fog removes some
+      dist = dist + 16
+   end
    camera.setRenderDistance(dist)
 end, 3, 'render_distance')
-   :setItem(makeItemEmoji('question'))
+   :setItem(makeItemEmoji('mag_right'))
 
-actionWheelSlider(mainPage, 'Render speed', {
+local renderSpeedAction = actionWheelSlider(mainPage, 'Render speed', {
    1,
    2,
    4,
@@ -138,6 +143,30 @@ actionWheelSlider(mainPage, 'Render speed', {
    camera.setRenderSpeed(v)
 end, 3, 'render_speed', 'Vertical lines per frame\nuse slower on higher resolutions\nto avoid lag')
    :setItem(makeItemEmoji('question'))
+
+do
+   local clockRot = -1
+   local oldClockRot = -1
+   local clockSpeed = 0
+   local hovered = false
+   function events.tick()
+      local hovering = action_wheel:getSelectedAction() == renderSpeedAction
+      if hovering and not hovered then
+         clockSpeed = clockSpeed + 1 + math.random() * 4
+      end
+      hovered = hovering
+      clockSpeed = clockSpeed * 0.9
+      oldClockRot = clockRot
+      clockRot = clockRot + clockSpeed
+   end
+
+   function events.world_render(delta)
+      if action_wheel:isEnabled() then
+         local rot = math.floor(math.lerp(oldClockRot, clockRot, delta)) % 12 + 1
+         renderSpeedAction:setItem(makeItemEmoji('clock'..rot))
+      end
+   end
+end
 
 local photoSaved = true
 local lastPhotoFilePath = ''
@@ -199,7 +228,18 @@ autoSavePhotosAction:onRightClick(function()
    autoSavePhotosAction:setToggled(true)
 end)
 
-mainPage:newAction():setHoverColor(0, 0, 0)
+mainPage:newAction()
+   :title(toJson{
+      'You can find photos in:\n',
+      {text = 'figura/data/'..imageFolderPath, color = 'aqua'},
+      '\nWhere ',
+      {text = 'figura', color = 'aqua'},
+      ' is',
+      '\nyour figura folder'
+   })
+   :setItem(makeItemEmoji('folder'))
+   :setHoverItem(makeItemEmoji('folder_paper'))
+   :setHoverColor(0.5, 0.5, 0.5)
 
 -- take photo
 local previewHud = models:newPart('preview', 'Hud')

@@ -96,7 +96,12 @@ local starStrength = 1
 --    previewSprite:setScale(size)
 -- end
 
-local function raycastPixel(camPos, dir, x, y)
+---@param camPos Vector3
+---@param dir Vector4
+---@param x number
+---@param y number
+---@param depthAdjust number
+local function raycastPixel(camPos, dir, x, y, depthAdjust)
    local pos=camPos
    local color=vec(0, 0, 0, 0)
    local blocksDist=raycastBlocksDist
@@ -186,6 +191,7 @@ local function raycastPixel(camPos, dir, x, y)
       end
    end
    depth = raycastBlocksDist - depth
+   depth = depth * depthAdjust
    -- sky color
    local sky = math.lerp(
       skyColor,
@@ -196,7 +202,7 @@ local function raycastPixel(camPos, dir, x, y)
    color.rgb = math.lerp(
       color.rgb,
       sky * 0.7 + fogColor * 0.3,
-      math.clamp((depth - raycastBlocksDist + 32) / 32, 0, 1)
+      math.clamp((depth - raycastBlocksDist + 36) / 24, 0, 1)
    )
    -- clouds
    if dir.y ~= 0 then
@@ -204,7 +210,6 @@ local function raycastPixel(camPos, dir, x, y)
       if dirScale > 0 and dirScale < depth then
          local cloudHitPos = camPos + dir * dirScale
          local uv = (cloudHitPos.xz / 8):floor() % 256
-         -- local uv = (cloudHitPos.xz):floor() % 256
          local newColor = cloudsPng:getPixel(uv.x, uv.y)
          if newColor.a > 0.5 then
             depth = dirScale
@@ -289,6 +294,7 @@ local function cameraUpdate()
    -- render
    local pos=camera.pos
    local dirMat=camera.dirMat
+   local invertedDirMat=camera.dirMat:inverted()
 
    local res = camera.res
 
@@ -301,7 +307,13 @@ local function cameraUpdate()
       local xScaled=(1 - x / (res.x - 1) * 2) * res.x / res.y
       for y=0, maxHeight do
          local dir=(vec(xScaled, y * yScale + 1, 1) * dirMat):normalize()
-         raycastPixel(pos, dir, x, y)
+         raycastPixel(
+            pos,
+            dir,
+            x,
+            y,
+            (dir * invertedDirMat).z
+         )
       end
    end
    camera.x=camera.x + cameraSpeed
