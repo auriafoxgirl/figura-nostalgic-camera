@@ -5,6 +5,15 @@ local imageFilePath = 'photos/photo_%s.png'
 local imageFolderPath = imageFilePath:gsub('/[^/]*$', '/')
 file:mkdirs(imageFolderPath)
 
+-- info text
+if #file:list(imageFolderPath) == 0 then
+   printJson(toJson{
+      'Open ',
+      {text = 'action wheel ', color = 'aqua'},
+      'to take photos!'
+   })
+end
+
 local filePhotoI = 0
 
 local camera=require('camera')
@@ -92,30 +101,54 @@ action_wheel:setPage(mainPage)
 
 local takePhotoAction = mainPage:newAction()
 
-local resolutionsList = {
-   '240x180     4:3',
-   '480x360     4:3',
-   '80x45        16:9',
-   '160x90    §l  §r16:9',
-   '640x360     16:9',
-   '1920x1080  16:9',
-   '3840x2160  16:9',
-}
-local maxTextureSize = avatar:getMaxTextureSize()
-for i = #resolutionsList, 1, -1 do
-   local x, y = resolutionsList[i]:match('^(%d+)x(%d+)')
-   x, y = tonumber(x), tonumber(y)
-   if x > maxTextureSize or y > maxTextureSize then
-      table.remove(resolutionsList, i)
+local currentResolution = 144
+local currentAspectRatio = 16 / 9
+local currentRes = vec(144, 144)
+
+local function updateCameraResolution()
+   local res = vec(1, 1)
+   if currentAspectRatio >= 1 then
+      local width = math.ceil(currentResolution * currentAspectRatio)
+      res = vec(width, currentResolution)
+   else
+      local height = math.ceil(currentResolution / currentAspectRatio)
+      res = vec(currentResolution, height)
    end
+   currentRes = res
+   camera.setResolution(res)
 end
 
-actionWheelSlider(mainPage, 'Resolution', resolutionsList, function(_, v)
-   local x, y = v:match('^(%d+)x(%d+)')
-   x, y = tonumber(x), tonumber(y)
-   camera.setResolution(vec(x, y))
-end, 1, 'resolution')
+
+actionWheelSlider(mainPage, 'Resolution', {
+   '144p',
+   '360p',
+   '480p',
+   '720p',
+   '900p',
+   '1080p',
+   '2160p'
+}, function(_, v)
+   currentResolution = tonumber(v:match('%d+'))
+   updateCameraResolution()
+end, 2, 'resolution')
    :setItem(makeItemEmoji('mcb_end_crystal'))
+
+actionWheelSlider(mainPage, 'Aspect Ratio', {
+   '1:1',
+   '4:3',
+   '16:9',
+   '21:9',
+   '3:4',
+   '9:16',
+   '21:9',
+}, function(_, v)
+   local x, y = v:match('(%d+):(%d+)')
+   x = tonumber(x)
+   y = tonumber(y)
+   currentAspectRatio = x / y
+   updateCameraResolution()
+end, 2, 'aspect_ratio')
+   :setItem(makeItemEmoji('mcb_glass'))
 
 actionWheelSlider(mainPage, 'Render distance', {
    '32§l  §rblocks',
@@ -196,6 +229,11 @@ local function savePhoto()
 
    savePhotoAction:hoverColor(0.5, 0.5, 0.5)
    savePhotoAction:hoverItem(makeItemEmoji('checkmark'))
+   savePhotoAction:title(toJson{
+      'Save photo',
+      {color = 'gray', text = '\nPhoto saved to:\n'},
+      {color = 'aqua', text = 'figura/data/'..lastPhotoFilePath}
+   })
 
    local saved = textureToSave:save()
    local buffer = data:createBuffer(#saved)
@@ -314,6 +352,22 @@ previewHud.preRender = function(delta)
 end
 
 local function takePhoto()
+   local maxRes = avatar:getMaxTextureSize()
+   if currentRes.x > maxRes or currentRes.y > maxRes then
+      printJson(toJson{
+         {text = '', color = 'white'},
+         {text = '! ', color = 'red'},
+         'Current resolution ',
+         {text = currentRes.x..'x'..currentRes.y, color = 'aqua'},
+         ' is bigger than allowed by figura ',
+         {text = maxRes..'x'..maxRes, color = 'aqua'},
+         '. Pick lower resolution or go to ',
+         {text = 'figura permissions tab', color = 'aqua'},
+        ' and change texture size so something bigger.'
+      })
+      return
+   end
+   takePhotoAction:setHoverColor(0.5, 0.5, 0.5)
    filePhotoI = filePhotoI + 1
    if file:exists(imageFilePath:format(filePhotoI)) then
       -- binary search index for file name
@@ -349,6 +403,8 @@ local function takePhoto()
 
       takePhotoAction:setHoverColor()
 
+      savePhotoAction:title('Save photo')
+
       if autoSavePhotos then
          savePhoto()
       end
@@ -377,7 +433,6 @@ takePhotoAction:title('Take photo')
    :item(makeItemEmoji('camera'))
    :onLeftClick(function()
       if camera.getQueueSize() == 0 then
-         takePhotoAction:setHoverColor(0.5, 0.5, 0.5)
          takePhoto()
       end
    end)
