@@ -706,6 +706,9 @@ local blockAliasMap={
    ['minecraft:smooth_sandstone']='minecraft:sandstone',
    ['minecraft:smooth_sandstone_slab']='minecraft:sandstone',
    ['minecraft:coarse_dirt']='minecraft:dirt',
+
+   ['minecraft:birch_wood']='minecraft:birch_log',
+   ['minecraft:spruce_wood']='minecraft:spruce_log',
 }
 
 local blockAliasMap2={}

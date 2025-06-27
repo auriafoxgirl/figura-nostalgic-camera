@@ -140,7 +140,7 @@ actionWheelSlider(mainPage, 'Aspect Ratio', {
    '21:9',
    '3:4',
    '9:16',
-   '21:9',
+   '9:21',
 }, function(_, v)
    local x, y = v:match('(%d+):(%d+)')
    x = tonumber(x)
@@ -303,7 +303,9 @@ local bgSprite = previewHud:newSprite('bg')
    :setLight(15, 15)
    :setTexture(whitePixel, 1, 1)
    :setPos(-4, -4, 1)
-local previewText = previewHud:newText('text')
+local previewTextTask = previewHud:newText('text')
+local previewText = ''
+previewTextTask:setWrap(true)
 
 local previewTexture
 
@@ -343,12 +345,14 @@ previewHud.preRender = function(delta)
    opacity = 3 * opacity ^ 2 - 2 * opacity ^ 3
    opacity = math.clamp(opacity, 0.01, 1)
 
+   previewTextTask:setWidth(size.x)
+   local textHeight = client.getTextDimensions(previewText, size.x, true).y
    previewSprite:setScale(size):setColor(1, 1, 1, opacity)
-   bgSprite:setScale(size + vec(2, 13, 0)):setColor(1, 1, 1, opacity)
-   previewText:setOpacity(opacity)
+   bgSprite:setScale(size + vec(2, textHeight + 3, 0)):setColor(1, 1, 1, opacity)
+   previewTextTask:setOpacity(opacity)
 
    previewHud:setPos((1 - anim) * (size.x + 16), 0, 0)
-   previewText:setPos(-5, -size.y - 7, -1)
+   previewTextTask:setPos(-5, -size.y - 7, -1)
 end
 
 local function takePhoto()
@@ -387,8 +391,9 @@ local function takePhoto()
       previewTexture = texture
       previewForceVisible = true
 
-      previewText:setText(toJson{
-         text = 'figura/data/'..myFilePath,
+      previewText = 'figura/data/'..myFilePath
+      previewTextTask:setText(toJson{
+         text = previewText,
          color = '#000000'
       })
    end, function(texture)
