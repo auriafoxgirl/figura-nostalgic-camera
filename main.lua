@@ -139,10 +139,18 @@ do
    local oldClockRot = -1
    local clockSpeed = 0
    local hovered = false
+   local hoverTime = 0
+   local actionWheelTime = 0
    function events.tick()
-      local hovering = action_wheel:getSelectedAction() == renderSpeedAction
-      if hovering and not hovered then
+      actionWheelTime = action_wheel:isEnabled() and math.min(actionWheelTime + 1, 10) or 0
+      local hovering = actionWheelTime >= 2 and action_wheel:getSelectedAction() == renderSpeedAction
+      if hovering and not hovered and hoverTime == 0 then
          clockSpeed = clockSpeed + 1 + math.random() * 4
+      end
+      if hovering then
+         hoverTime = 2
+      else
+         hoverTime = math.max(hoverTime - 1, 0)
       end
       hovered = hovering
       clockSpeed = clockSpeed * 0.9
