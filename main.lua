@@ -221,8 +221,22 @@ local textureToSave = nil
 
 local savePhotoAction = mainPage:newAction()
 
-local function savePhoto()
+---@param autoSave boolean?
+local function savePhoto(autoSave)
    if photoSaved then
+      return
+   end
+   if autoSave and currentResolution >= 1500 then
+      printJson(toJson{
+         '',
+         {text = '! ', color = 'red'},
+         'Current photo might be too big to save and it might crash your avatar or game. ',
+         'Use ',
+         {text = '/figura export texture '..textureToSave:getName(), color = 'aqua'},
+         ' to save photo to your ',
+         {text = 'figura/', color = 'aqua'},
+         ' folder.'
+      })
       return
    end
    photoSaved = true
@@ -249,7 +263,7 @@ local savePhotoActionItem = makeItemEmoji('photo')
 savePhotoAction:title('Save photo')
    :item(savePhotoActionItem)
    :hoverColor(0.5, 0.5, 0.5)
-   :onLeftClick(savePhoto)
+   :onLeftClick(function() savePhoto() end)
 
 local autoSavePhotos = config:load('auto_save_photos')
 if autoSavePhotos == nil then
@@ -367,7 +381,11 @@ local function takePhoto()
          {text = maxRes..'x'..maxRes, color = 'aqua'},
          '. Pick lower resolution or go to ',
          {text = 'figura permissions tab', color = 'aqua'},
-        ' and change texture size so something bigger.'
+        ' and change ',
+        {text = 'Max Texture Size', color = 'aqua'},
+        ' with ',
+        {text = 'Precise Mode enabled ', color = 'aqua'},
+        'to something bigger.'
       })
       return
    end
@@ -411,7 +429,7 @@ local function takePhoto()
       savePhotoAction:title('Save photo')
 
       if autoSavePhotos then
-         savePhoto()
+         savePhoto(true)
       end
    end)
 end
