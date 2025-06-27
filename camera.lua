@@ -318,13 +318,18 @@ local function cameraUpdate()
    end
    camera.x=camera.x + cameraSpeed
 
-   texture:update()
    if camera.x >= res.x then
+      texture:update()
       table.remove(cameraQueue, 1)
       if camera.finishFunc then
          camera.finishFunc(texture)
       end
-      -- print('size', #texture:save() / 1000, 'bytes')
+   else
+      camera.updateDelay = camera.updateDelay - cameraSpeed
+      if camera.updateDelay <= 0 then
+         camera.updateDelay = camera.updateDelay % 1 + res.x / 100
+         texture:update()
+      end
    end
 end
 
@@ -418,7 +423,8 @@ function mod.takePhoto(startFunc, finishFunc)
       skySideMat = skySideMat,
       starStrength = starStrength,
       startFunc = startFunc,
-      finishFunc = finishFunc
+      finishFunc = finishFunc,
+      updateDelay = 0
    })
 end
 
