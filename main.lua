@@ -14,7 +14,7 @@ local whitePixel = textures.whitePixel or textures:newTexture('whitePixel', 1, 1
 ---@param page Page
 ---@param title string
 ---@param options (string|number)[]
----@param setFunc fun(i: number, v: string)
+---@param setFunc fun(i: number, v: string, dir: number)
 ---@param default number?
 ---@param configName string?
 ---@param description string?
@@ -63,7 +63,7 @@ local function actionWheelSlider(page, title, options, setFunc, default, configN
       if configName then
          config:save(configName, option)
       end
-      setFunc(option, options[option])
+      setFunc(option, options[option], dir)
       updateTitle()
    end
 
@@ -76,7 +76,7 @@ local function actionWheelSlider(page, title, options, setFunc, default, configN
    end)
 
    updateTitle()
-   setFunc(option, options[option])
+   setFunc(option, options[option], 0)
 
    return action
 end
@@ -132,19 +132,9 @@ actionWheelSlider(mainPage, 'Render distance', {
 end, 3, 'render_distance')
    :setItem(makeItemEmoji('mag_right'))
 
-local renderSpeedAction = actionWheelSlider(mainPage, 'Render speed', {
-   1,
-   2,
-   4,
-   8,
-   16,
-   32,
-}, function(i, v)
-   camera.setRenderSpeed(v)
-end, 3, 'render_speed', 'Vertical lines per frame\nuse slower on higher resolutions\nto avoid lag')
-   :setItem(makeItemEmoji('question'))
-
 do
+   local renderSpeedAction
+
    local clockRot = -1
    local oldClockRot = -1
    local clockSpeed = 0
@@ -158,7 +148,23 @@ do
       clockSpeed = clockSpeed * 0.9
       oldClockRot = clockRot
       clockRot = clockRot + clockSpeed
+      local offset = math.floor(clockRot / 12) * 12
+      clockRot = clockRot - offset
+      oldClockRot = oldClockRot - offset
    end
+
+   renderSpeedAction = actionWheelSlider(mainPage, 'Render speed', {
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+   }, function(i, v, dir)
+      camera.setRenderSpeed(v)
+      clockSpeed = clockSpeed - dir * 0.5
+   end, 3, 'render_speed', 'Vertical lines per frame\nuse slower on higher resolutions\nto avoid lag')
+      :setItem(makeItemEmoji('question'))
 
    function events.world_render(delta)
       if action_wheel:isEnabled() then
