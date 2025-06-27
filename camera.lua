@@ -121,7 +121,7 @@ local function raycastPixel(camPos, dir, x, y, depthAdjust)
       blocksDist=blocksDist - distTraveled
 
       local newLight=(world.getLightLevel(hitpos + faceToNormal[face] * 0.4) / 15)
-      if newLight > 0 or distTraveled > 0.5 then -- bad fix because raycast stupid
+      if newLight > 0.05 or distTraveled > 1 then -- bad fix because raycast stupid
          oldLight=newLight
       else
          if block:isFullCube() and block:isOpaque() then -- stupid fix
