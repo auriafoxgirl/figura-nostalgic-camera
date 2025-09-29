@@ -90,10 +90,29 @@ local function actionWheelSlider(page, title, options, setFunc, default, configN
    return action
 end
 
+---@param action Action
 ---@param emoji string
----@return string
-local function makeItemEmoji(emoji)
-   return 'player_head{SkullOwner:'..avatar:getEntityName()..',display:{Name:\'"icon;'..emoji..'"\'}}'
+---@param hover boolean?
+local function setActionEmoji(action, emoji, hover)
+   if action.setPart then
+      local model = models:newPart(''):remove()
+      model:newText('')
+         :setText(':'..emoji..':')
+         :pos(4, 4, 0)
+      model:scale(1.6)
+      if hover then
+         action:setHoverPart(model)
+      else
+         action:setPart(model)
+      end
+      return
+   end
+   local item = 'player_head{SkullOwner:'..avatar:getEntityName()..',display:{Name:\'"icon;'..emoji..'"\'}}'
+   if hover then
+      action:setHoverItem(item)
+   else
+      action:setItem(item)
+   end
 end
 
 local mainPage = action_wheel:newPage()
@@ -119,51 +138,54 @@ local function updateCameraResolution()
 end
 
 
-actionWheelSlider(mainPage, 'Resolution', {
-   '144p',
-   '360p',
-   '480p',
-   '720p',
-   '900p',
-   '1080p',
-   '2160p'
-}, function(_, v)
-   currentResolution = tonumber(v:match('%d+'))
-   updateCameraResolution()
-end, 2, 'resolution')
-   :setItem(makeItemEmoji('mcb_end_crystal'))
+setActionEmoji(actionWheelSlider(mainPage, 'Resolution', {
+      '144p',
+      '360p',
+      '480p',
+      '720p',
+      '900p',
+      '1080p',
+      '2160p'
+   }, function(_, v)
+      currentResolution = tonumber(v:match('%d+'))
+      updateCameraResolution()
+   end, 2, 'resolution'),
+   'mcb_end_crystal'
+)
 
-actionWheelSlider(mainPage, 'Aspect Ratio', {
-   '1:1',
-   '4:3',
-   '16:9',
-   '21:9',
-   '3:4',
-   '9:16',
-   '9:21',
-}, function(_, v)
-   local x, y = v:match('(%d+):(%d+)')
-   x = tonumber(x)
-   y = tonumber(y)
-   currentAspectRatio = x / y
-   updateCameraResolution()
-end, 2, 'aspect_ratio')
-   :setItem(makeItemEmoji('mcb_glass'))
+setActionEmoji(actionWheelSlider(mainPage, 'Aspect Ratio', {
+      '1:1',
+      '4:3',
+      '16:9',
+      '21:9',
+      '3:4',
+      '9:16',
+      '9:21',
+   }, function(_, v)
+      local x, y = v:match('(%d+):(%d+)')
+      x = tonumber(x)
+      y = tonumber(y)
+      currentAspectRatio = x / y
+      updateCameraResolution()
+   end, 2, 'aspect_ratio'),
+   'mcb_glass'
+)
 
-actionWheelSlider(mainPage, 'Render distance', {
-   '32§l  §rblocks',
-   '64§l  §rblocks',
-   '128 blocks',
-   '256 blocks',
-   '512 blocks',
-}, function(i, v)
-   local dist = tonumber(v:match('%d+'))
-   if dist < 60 then -- add some extra blocks so its actually visible because fog removes some
-      dist = dist + 16
-   end
-   camera.setRenderDistance(dist)
-end, 3, 'render_distance')
-   :setItem(makeItemEmoji('mag_right'))
+setActionEmoji(actionWheelSlider(mainPage, 'Render distance', {
+      '32§l  §rblocks',
+      '64§l  §rblocks',
+      '128 blocks',
+      '256 blocks',
+      '512 blocks',
+   }, function(i, v)
+      local dist = tonumber(v:match('%d+'))
+      if dist < 60 then -- add some extra blocks so its actually visible because fog removes some
+         dist = dist + 16
+      end
+      camera.setRenderDistance(dist)
+   end, 3, 'render_distance'),
+   'mag_right'
+)
 
 do
    local renderSpeedAction
@@ -205,12 +227,12 @@ do
       camera.setRenderSpeed(v)
       clockSpeed = clockSpeed - dir * 0.5
    end, 3, 'render_speed', 'Vertical lines per frame\nuse slower on higher resolutions\nto avoid lag')
-      :setItem(makeItemEmoji('question'))
+   setActionEmoji(renderSpeedAction, 'question')
 
    function events.world_render(delta)
       if action_wheel:isEnabled() then
          local rot = math.floor(math.lerp(oldClockRot, clockRot, delta)) % 12 + 1
-         renderSpeedAction:setItem(makeItemEmoji('clock'..rot))
+         setActionEmoji(renderSpeedAction, 'clock'..rot)
       end
    end
 end
@@ -242,7 +264,7 @@ local function savePhoto(autoSave)
    photoSaved = true
 
    savePhotoAction:hoverColor(0.5, 0.5, 0.5)
-   savePhotoAction:hoverItem(makeItemEmoji('checkmark'))
+   setActionEmoji(savePhotoAction, 'checkmark', true)
    savePhotoAction:title(toJson{
       'Save photo',
       {color = 'gray', text = '\nPhoto saved to:\n'},
@@ -259,11 +281,11 @@ local function savePhoto(autoSave)
    buffer:close()
 end
 
-local savePhotoActionItem = makeItemEmoji('photo')
+local savePhotoActionEmoji = 'photo'
 savePhotoAction:title('Save photo')
-   :item(savePhotoActionItem)
    :hoverColor(0.5, 0.5, 0.5)
    :onLeftClick(function() savePhoto() end)
+setActionEmoji(savePhotoAction, savePhotoActionEmoji)
 
 local autoSavePhotos = config:load('auto_save_photos')
 if autoSavePhotos == nil then
@@ -272,7 +294,7 @@ end
 local autoSavePhotosAction = mainPage:newAction()
 autoSavePhotosAction:setToggleColor(0, 0.75, 0)
    :title('Auto save photos')
-   :item(makeItemEmoji('paper'))
+setActionEmoji(autoSavePhotosAction, 'paper')
 
 local function setAutoSave(x)
    if autoSavePhotos ~= x then
@@ -294,7 +316,7 @@ autoSavePhotosAction:onRightClick(function()
    autoSavePhotosAction:setToggled(true)
 end)
 
-mainPage:newAction()
+local photosFolderInfo = mainPage:newAction()
    :title(toJson{
       'You can find photos in:\n',
       {text = 'figura/data/'..imageFolderPath, color = 'aqua'},
@@ -303,9 +325,10 @@ mainPage:newAction()
       ' is',
       '\nyour figura folder'
    })
-   :setItem(makeItemEmoji('folder'))
-   :setHoverItem(makeItemEmoji('folder_paper'))
    :setHoverColor(0.5, 0.5, 0.5)
+
+setActionEmoji(photosFolderInfo, 'folder')
+setActionEmoji(photosFolderInfo, 'folder_paper', true)
 
 -- take photo
 local previewHud = models:newPart('preview', 'Hud')
@@ -422,7 +445,7 @@ local function takePhoto()
       lastPhotoFilePath = myFilePath
       photoSaved = false
       savePhotoAction:hoverColor()
-      savePhotoAction:setHoverItem(savePhotoActionItem)
+      setActionEmoji(savePhotoAction, savePhotoActionEmoji)
 
       takePhotoAction:setHoverColor()
 
@@ -452,10 +475,11 @@ events.SKULL_RENDER:register(function(_, _, item)
 end)
 
 -- action wheel
-takePhotoAction:title('Take photo')
-   :item(makeItemEmoji('camera'))
+local takePhotoAction = takePhotoAction:title('Take photo')
    :onLeftClick(function()
       if camera.getQueueSize() == 0 then
          takePhoto()
       end
    end)
+
+setActionEmoji(takePhotoAction, 'camera')
